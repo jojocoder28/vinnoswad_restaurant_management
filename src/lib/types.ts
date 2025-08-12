@@ -1,5 +1,6 @@
-export type OrderStatus = 'pending' | 'approved' | 'ready' | 'served';
-export type UserRole = 'admin' | 'manager' | 'waiter';
+
+export type OrderStatus = 'pending' | 'approved' | 'prepared' | 'ready' | 'served';
+export type UserRole = 'admin' | 'manager' | 'waiter' | 'kitchen';
 export type UserStatus = 'pending' | 'approved';
 
 export interface MenuItem {

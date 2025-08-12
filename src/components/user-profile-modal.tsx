@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { IndianRupee, ClipboardList, ChefHat, Clock } from 'lucide-react';
+import { IndianRupee, ClipboardList, ChefHat, Clock, Utensils } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { ScrollArea } from './ui/scroll-area';
 
@@ -63,7 +63,7 @@ export default function UserProfileModal({ isOpen, onClose, user, orders, menuIt
         if (user.role !== 'manager') return { managerPerformance: null, managerRecentPending: [] };
         
         const pendingOrders = orders.filter(o => o.status === 'pending');
-        const activeKitchenOrders = orders.filter(o => o.status === 'approved' || o.status === 'ready');
+        const activeKitchenOrders = orders.filter(o => o.status === 'approved' || o.status === 'prepared');
         
         const recentPending = pendingOrders.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 5);
 
@@ -75,6 +75,17 @@ export default function UserProfileModal({ isOpen, onClose, user, orders, menuIt
             managerRecentPending: recentPending
         };
 
+    }, [user, orders]);
+    
+    const kitchenPerformance = useMemo(() => {
+        if(user.role !== 'kitchen') return null;
+        const preparedOrders = orders.filter(o => o.status === 'prepared' || o.status === 'ready' || o.status === 'served');
+        const totalItemsPrepared = preparedOrders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
+        
+        return {
+            ordersPrepared: preparedOrders.length,
+            itemsPrepared: totalItemsPrepared
+        }
     }, [user, orders]);
 
 
@@ -177,11 +188,16 @@ export default function UserProfileModal({ isOpen, onClose, user, orders, menuIt
                                 </Card>
                             </div>
                         </>
+                    ) : user.role === 'kitchen' && kitchenPerformance ? (
+                         <div className="grid grid-cols-2 gap-4">
+                            <StatCard title="Total Orders Prepared" value={kitchenPerformance.ordersPrepared} icon={ClipboardList} />
+                            <StatCard title="Total Items Prepared" value={kitchenPerformance.itemsPrepared} icon={Utensils} />
+                        </div>
                     ) : (
                         <Card className="p-6 text-center">
                             <CardTitle>No Performance Data</CardTitle>
                             <CardContent className="pt-4">
-                                <p className="text-muted-foreground">Performance metrics are not tracked for the '{user.role}' role.</p>
+                                <p className="text-muted-foreground">Performance metrics are not tracked for this role, or there is no data yet.</p>
                             </CardContent>
                         </Card>
                     )}

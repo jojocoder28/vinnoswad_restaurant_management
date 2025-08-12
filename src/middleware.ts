@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  const protectedRoutes = ['/admin', '/manager', '/waiter'];
+  const protectedRoutes = ['/admin', '/manager', '/waiter', '/kitchen'];
   const publicRoutes = ['/login', '/signup', '/unauthorized'];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
@@ -42,6 +42,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
     if (pathname.startsWith('/waiter') && !['admin', 'waiter'].includes(session.role)) {
+      return NextResponse.redirect(new URL('/unauthorized', request.url));
+    }
+     if (pathname.startsWith('/kitchen') && !['admin', 'kitchen'].includes(session.role)) {
       return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
 

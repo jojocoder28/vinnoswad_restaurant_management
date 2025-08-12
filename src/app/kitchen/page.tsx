@@ -7,20 +7,17 @@ import {
   getOrders,
   updateOrderStatus,
   getMenuItems,
-  addMenuItem,
-  updateMenuItem,
-  deleteMenuItem,
-  getWaiters
+  getWaiters,
 } from '../actions';
 
-import ManagerView from '@/components/manager-view';
+import KitchenView from '@/components/kitchen-view';
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/dashboard-layout';
 import { getSession } from '@/lib/auth';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 
-export default function ManagerPage() {
+export default function KitchenPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [waiters, setWaiters] = useState<Waiter[]>([]);
@@ -71,7 +68,7 @@ export default function ManagerPage() {
       setOrders(ordersData);
       toast({
         title: "Order Updated",
-        description: `Order status has been changed to ${status}.`,
+        description: `Order has been marked as ${status}.`,
       });
     } catch (error) {
        toast({
@@ -82,57 +79,6 @@ export default function ManagerPage() {
     }
   };
 
-  const handleAddMenuItem = async (itemData: Omit<MenuItem, 'id'>) => {
-    try {
-      const newItem = await addMenuItem(itemData);
-      setMenuItems(prev => [...prev, newItem]);
-      toast({
-        title: "Menu Item Added",
-        description: `${newItem.name} has been added to the menu.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add menu item.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUpdateMenuItem = async (updatedItem: MenuItem) => {
-    try {
-      await updateMenuItem(updatedItem);
-      setMenuItems(prev => prev.map(item => (item.id === updatedItem.id ? updatedItem : item)));
-       toast({
-        title: "Menu Item Updated",
-        description: `${updatedItem.name} has been updated.`,
-      });
-    } catch(error) {
-        toast({
-        title: "Error",
-        description: "Failed to update menu item.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteMenuItem = async (itemId: string) => {
-    try {
-      await deleteMenuItem(itemId);
-      setMenuItems(prev => prev.filter(item => item.id !== itemId));
-       toast({
-        title: "Menu Item Deleted",
-        description: `An item has been removed from the menu.`,
-        variant: 'destructive'
-      });
-    } catch (error) {
-        toast({
-        title: "Error",
-        description: "Failed to delete menu item.",
-        variant: "destructive",
-      });
-    }
-  };
 
   if (loading || !user) {
     return (
@@ -146,15 +92,12 @@ export default function ManagerPage() {
 
   return (
     <DashboardLayout user={user}>
-        <h1 className="font-headline text-3xl md:text-4xl font-bold">Manager Dashboard</h1>
-         <ManagerView
+        <h1 className="font-headline text-3xl md:text-4xl font-bold">Kitchen Orders</h1>
+         <KitchenView
             orders={orders}
             menuItems={menuItems}
             waiters={waiters}
             onUpdateStatus={handleUpdateOrderStatus}
-            onAddMenuItem={handleAddMenuItem}
-            onUpdateMenuItem={handleUpdateMenuItem}
-            onDeleteMenuItem={handleDeleteMenuItem}
           />
     </DashboardLayout>
   );

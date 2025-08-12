@@ -4,7 +4,7 @@
 import React, { useMemo, useState } from 'react';
 import type { Order, MenuItem, Waiter, OrderStatus, Table, DecodedToken } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Utensils } from 'lucide-react';
 import OrderCard from './order-card';
 import OrderForm from './order-form';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -89,7 +89,7 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
                         actions={
                             order.status === 'ready' ? (
                             <Button className="w-full" onClick={() => onUpdateStatus(order.id, 'served')}>
-                                Mark as Served
+                                <Utensils className="mr-2 h-4 w-4"/> Mark as Served
                             </Button>
                             ) : null
                         }

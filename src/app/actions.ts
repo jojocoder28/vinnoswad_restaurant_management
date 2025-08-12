@@ -69,7 +69,7 @@ export async function registerUser(userData: Omit<User, 'id' | 'status'>, isAdmi
     if (isAdminCreating) {
         status = 'approved';
     } else {
-        status = (userData.role === 'manager' || userData.role === 'waiter') ? 'pending' : 'approved';
+        status = (userData.role === 'manager' || userData.role === 'waiter' || userData.role === 'kitchen') ? 'pending' : 'approved';
     }
     
     const newUser = {
@@ -240,7 +240,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus): P
                 const otherOrders = await ordersCollection.countDocuments({
                     tableNumber: table.tableNumber,
                     waiterId: order.waiterId,
-                    status: { $ne: 'served' },
+                    status: { $nin: ['served'] },
                 });
 
                 if (otherOrders === 0) {
@@ -255,6 +255,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus): P
 
     revalidatePath('/waiter');
     revalidatePath('/manager');
+    revalidatePath('/kitchen');
 }
 
 // Menu Item Actions

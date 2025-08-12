@@ -22,7 +22,7 @@ const userSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  role: z.enum(['admin', 'manager', 'waiter'], { required_error: 'Please select a role' }),
+  role: z.enum(['admin', 'manager', 'waiter', 'kitchen'], { required_error: 'Please select a role' }),
 });
 
 export default function UserForm({ isOpen, onClose, onSave }: UserFormProps) {
@@ -105,6 +105,7 @@ export default function UserForm({ isOpen, onClose, onSave }: UserFormProps) {
                       <SelectContent>
                         <SelectItem value="waiter">Waiter</SelectItem>
                         <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="kitchen">Kitchen</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
                     </Select>

@@ -114,7 +114,7 @@ export default function WaiterPage() {
 
   return (
     <DashboardLayout user={user}>
-        <h1 className="font-headline text-3xl md:text-4xl font-bold">Waiter View</h1>
+        <h1 className="font-headline text-3xl md:text-4xl font-bold">Waiter Dashboard</h1>
         <WaiterView
             orders={orders}
             menuItems={menuItems}
