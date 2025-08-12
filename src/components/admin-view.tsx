@@ -64,6 +64,9 @@ export default function AdminView({
         <TabsContent value="users" className="mt-6">
             <UserManagement 
                 users={users}
+                orders={orders}
+                menuItems={menuItems}
+                waiters={waiters}
                 onUpdateUserStatus={onUpdateUserStatus}
                 onDeleteUser={onDeleteUser}
                 onCreateUser={onCreateUser}

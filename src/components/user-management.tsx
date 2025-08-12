@@ -1,19 +1,23 @@
 
 "use client";
 
-import type { User, UserStatus, DecodedToken } from '@/lib/types';
+import type { User, UserStatus, DecodedToken, Order, MenuItem, Waiter } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, CheckCircle, Trash2, ShieldAlert, PlusCircle } from 'lucide-react';
+import { MoreHorizontal, CheckCircle, Trash2, ShieldAlert, PlusCircle, User as UserIcon } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { useState } from 'react';
 import UserForm from './user-form';
+import UserProfileModal from './user-profile-modal';
 
 interface UserManagementProps {
   users: User[];
+  orders: Order[];
+  menuItems: MenuItem[];
+  waiters: Waiter[];
   onUpdateUserStatus: (userId: string, status: UserStatus) => void;
   onDeleteUser: (userId: string) => void;
   onCreateUser: (userData: Omit<User, 'id' | 'status'>) => void;
@@ -25,9 +29,10 @@ const statusStyles = {
     approved: "bg-green-500/20 text-green-700 border-green-500/30",
 }
 
-export default function UserManagement({ users, onUpdateUserStatus, onDeleteUser, onCreateUser, currentUser }: UserManagementProps) {
+export default function UserManagement({ users, orders, menuItems, waiters, onUpdateUserStatus, onDeleteUser, onCreateUser, currentUser }: UserManagementProps) {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [viewingUser, setViewingUser] = useState<User | null>(null);
 
   const handleDeleteClick = (user: User) => {
     setUserToDelete(user);
@@ -43,6 +48,10 @@ export default function UserManagement({ users, onUpdateUserStatus, onDeleteUser
   const handleSaveUser = (userData: Omit<User, 'id' | 'status'>) => {
     onCreateUser(userData);
   }
+
+  const handleViewProfile = (user: User) => {
+    setViewingUser(user);
+  };
 
 
   return (
@@ -86,12 +95,19 @@ export default function UserManagement({ users, onUpdateUserStatus, onDeleteUser
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                         {user.role === 'waiter' && (
+                          <>
+                            <DropdownMenuItem onClick={() => handleViewProfile(user)}>
+                              <UserIcon className="mr-2 h-4 w-4" /> View Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                          </>
+                        )}
                         {user.status === 'pending' && (
                             <DropdownMenuItem onClick={() => onUpdateUserStatus(user.id, 'approved')}>
                                 <CheckCircle className="mr-2 h-4 w-4" /> Approve
                             </DropdownMenuItem>
                         )}
-                        <DropdownMenuSeparator />
                         <DropdownMenuItem 
                             className="text-destructive focus:text-destructive focus:bg-destructive/10" 
                             onClick={() => handleDeleteClick(user)}>
@@ -129,6 +145,16 @@ export default function UserManagement({ users, onUpdateUserStatus, onDeleteUser
                 isOpen={isFormOpen}
                 onClose={() => setIsFormOpen(false)}
                 onSave={handleSaveUser}
+            />
+        )}
+        {viewingUser && (
+            <UserProfileModal
+                isOpen={!!viewingUser}
+                onClose={() => setViewingUser(null)}
+                user={viewingUser}
+                orders={orders}
+                menuItems={menuItems}
+                waiters={waiters}
             />
         )}
     </div>
