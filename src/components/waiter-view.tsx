@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
 import React, { useMemo, useState } from 'react';
-import type { Order, MenuItem, Waiter, OrderStatus } from '@/lib/types';
+import type { Order, MenuItem, Waiter, OrderStatus, Table } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import OrderCard from './order-card';
@@ -12,17 +12,21 @@ interface WaiterViewProps {
   orders: Order[];
   menuItems: MenuItem[];
   waiters: Waiter[];
+  tables: Table[];
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
-  onCreateOrder: (order: Omit<Order, 'id' | 'timestamp' | 'status'>) => void;
+  onCreateOrder: (order: Omit<Order, 'id' | 'timestamp' | 'status'>, tableId: string) => void;
 }
 
-export default function WaiterView({ orders, menuItems, waiters, onUpdateStatus, onCreateOrder }: WaiterViewProps) {
+export default function WaiterView({ orders, menuItems, waiters, tables, onUpdateStatus, onCreateOrder }: WaiterViewProps) {
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
   const [selectedWaiterId, setSelectedWaiterId] = useState<string>(waiters[0]?.id || '');
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => order.waiterId === selectedWaiterId && order.status !== 'served');
   }, [orders, selectedWaiterId]);
+  
+  const availableTables = useMemo(() => tables.filter(table => table.status === 'available'), [tables]);
+
 
   return (
     <div className="space-y-6">
@@ -40,7 +44,7 @@ export default function WaiterView({ orders, menuItems, waiters, onUpdateStatus,
               </SelectContent>
             </Select>
         </div>
-        <Button onClick={() => setIsOrderFormOpen(true)}>
+        <Button onClick={() => setIsOrderFormOpen(true)} disabled={!selectedWaiterId || availableTables.length === 0}>
           <PlusCircle className="mr-2 h-4 w-4" /> New Order
         </Button>
       </div>
@@ -75,6 +79,7 @@ export default function WaiterView({ orders, menuItems, waiters, onUpdateStatus,
         menuItems={menuItems}
         waiterId={selectedWaiterId}
         onCreateOrder={onCreateOrder}
+        tables={availableTables}
       />
     </div>
   );

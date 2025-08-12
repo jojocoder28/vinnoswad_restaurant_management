@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Order, MenuItem, Waiter } from '@/lib/types';
+import type { Order, MenuItem, Waiter, Table } from '@/lib/types';
 import {
   getOrders,
   createOrder,
@@ -13,6 +13,7 @@ import {
   deleteMenuItem,
   getWaiters,
   seedDatabase,
+  getTables
 } from './actions';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -28,6 +29,7 @@ export default function Home() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [waiters, setWaiters] = useState<Waiter[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -36,14 +38,16 @@ export default function Home() {
       try {
         setLoading(true);
         await seedDatabase(); // Seeds database with mock data if it's empty
-        const [ordersData, menuItemsData, waitersData] = await Promise.all([
+        const [ordersData, menuItemsData, waitersData, tablesData] = await Promise.all([
           getOrders(),
           getMenuItems(),
           getWaiters(),
+          getTables(),
         ]);
         setOrders(ordersData);
         setMenuItems(menuItemsData);
         setWaiters(waitersData);
+        setTables(tablesData);
       } catch (error) {
         console.error("Failed to fetch data:", error);
         toast({
@@ -60,10 +64,14 @@ export default function Home() {
 
   const pendingOrdersCount = useMemo(() => orders.filter(o => o.status === 'pending').length, [orders]);
 
-  const handleCreateOrder = async (orderData: Omit<Order, 'id' | 'timestamp' | 'status'>) => {
+  const handleCreateOrder = async (orderData: Omit<Order, 'id' | 'timestamp' | 'status'>, tableId: string) => {
     try {
-      const newOrder = await createOrder(orderData);
+      const newOrder = await createOrder(orderData, tableId);
       setOrders(prev => [newOrder, ...prev]);
+      const table = tables.find(t => t.id === tableId);
+      if (table) {
+        setTables(prev => prev.map(t => t.id === tableId ? {...t, status: 'occupied'} : t));
+      }
       toast({
         title: "Order Created",
         description: `New order for table ${newOrder.tableNumber} has been placed.`,
@@ -193,6 +201,7 @@ export default function Home() {
                     orders={orders}
                     menuItems={menuItems}
                     waiters={waiters}
+                    tables={tables}
                     onUpdateStatus={handleUpdateOrderStatus}
                     onCreateOrder={handleCreateOrder}
                   />

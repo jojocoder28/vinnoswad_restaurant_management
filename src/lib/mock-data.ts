@@ -1,4 +1,4 @@
-import type { MenuItem, Order, Waiter } from './types';
+import type { MenuItem, Order, Waiter, Table } from './types';
 
 export const initialWaiters: Waiter[] = [
   { id: 'WTR-001', name: 'Alex' },
@@ -62,4 +62,14 @@ export const initialOrders: Order[] = [
     waiterId: 'WTR-003',
     timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
   },
+];
+
+export const initialTables: Table[] = [
+  { id: 'TBL-001', tableNumber: 1, status: 'available' },
+  { id: 'TBL-002', tableNumber: 2, status: 'occupied' },
+  { id: 'TBL-003', tableNumber: 3, status: 'occupied' },
+  { id: 'TBL-004', tableNumber: 4, status: 'available' },
+  { id: 'TBL-005', tableNumber: 5, status: 'occupied' },
+  { id: 'TBL-006', tableNumber: 6, status: 'available' },
+  { id: 'TBL-007', tableNumber: 7, status: 'available' },
 ];

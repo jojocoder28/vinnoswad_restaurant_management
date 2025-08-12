@@ -2,8 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/mongodb';
-import { initialMenuItems, initialOrders, initialWaiters } from '@/lib/mock-data';
-import type { MenuItem, Order, OrderStatus, Waiter } from '@/lib/types';
+import { initialMenuItems, initialOrders, initialWaiters, initialTables } from '@/lib/mock-data';
+import type { MenuItem, Order, OrderStatus, Waiter, Table } from '@/lib/types';
 import { Collection, ObjectId } from 'mongodb';
 
 async function getCollection<T extends { id: string }>(collectionName: string): Promise<Collection<Omit<T, 'id'>>> {
@@ -25,12 +25,30 @@ export async function seedDatabase() {
     await seedCollection('menu', initialMenuItems);
     await seedCollection('waiters', initialWaiters);
     await seedCollection('orders', initialOrders);
+    await seedCollection('tables', initialTables);
 }
 
 function mapId<T>(document: any): T {
   const { _id, ...rest } = document;
   return { id: _id.toHexString(), ...rest } as T;
 }
+
+// Table Actions
+export async function getTables(): Promise<Table[]> {
+    const tablesCollection = await getCollection<Table>('tables');
+    const tables = await tablesCollection.find().sort({ tableNumber: 1 }).toArray();
+    return tables.map(table => mapId<Table>(table));
+}
+
+export async function updateTableStatus(tableId: string, status: 'available' | 'occupied'): Promise<void> {
+    const tablesCollection = await getCollection<Table>('tables');
+    await tablesCollection.updateOne(
+        { _id: new ObjectId(tableId) },
+        { $set: { status } }
+    );
+    revalidatePath('/');
+}
+
 
 // Order Actions
 export async function getOrders(): Promise<Order[]> {
@@ -39,7 +57,7 @@ export async function getOrders(): Promise<Order[]> {
     return orders.map(order => mapId<Order>(order));
 }
 
-export async function createOrder(orderData: Omit<Order, 'id' | 'timestamp' | 'status'>): Promise<Order> {
+export async function createOrder(orderData: Omit<Order, 'id' | 'timestamp' | 'status'>, tableIdToUpdate: string): Promise<Order> {
     const ordersCollection = await getCollection<Order>('orders');
     const newOrder = {
         ...orderData,
@@ -47,6 +65,12 @@ export async function createOrder(orderData: Omit<Order, 'id' | 'timestamp' | 's
         status: 'pending' as OrderStatus,
     };
     const result = await ordersCollection.insertOne(newOrder as Omit<Order, 'id'>);
+    
+    // Update table status
+    if (tableIdToUpdate) {
+        await updateTableStatus(tableIdToUpdate, 'occupied');
+    }
+
     revalidatePath('/');
     return mapId<Order>({ ...newOrder, _id: result.insertedId });
 }

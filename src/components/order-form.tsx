@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { z } from 'zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { MenuItem, Order } from '@/lib/types';
+import type { MenuItem, Order, Table } from '@/lib/types';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,8 @@ interface OrderFormProps {
   onClose: () => void;
   menuItems: MenuItem[];
   waiterId: string;
-  onCreateOrder: (order: Omit<Order, 'id' | 'timestamp' | 'status'>) => void;
+  onCreateOrder: (order: Omit<Order, 'id' | 'timestamp' | 'status'>, tableId: string) => void;
+  tables: Table[];
 }
 
 const orderItemSchema = z.object({
@@ -28,15 +29,15 @@ const orderItemSchema = z.object({
 });
 
 const orderFormSchema = z.object({
-  tableNumber: z.coerce.number().min(1, 'Table number is required'),
+  tableId: z.string().min(1, 'Table number is required'),
   items: z.array(orderItemSchema).min(1, 'Please add at least one item to the order'),
 });
 
-export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCreateOrder }: OrderFormProps) {
+export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCreateOrder, tables }: OrderFormProps) {
   const form = useForm<z.infer<typeof orderFormSchema>>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
-      tableNumber: '' as any,
+      tableId: '',
       items: [{ menuItemId: '', quantity: 1 }],
     },
   });
@@ -47,7 +48,15 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
   });
 
   const onSubmit = (values: z.infer<typeof orderFormSchema>) => {
-    onCreateOrder({ ...values, waiterId });
+    const selectedTable = tables.find(t => t.id === values.tableId);
+    if (!selectedTable) return;
+
+    const orderData = {
+      tableNumber: selectedTable.tableNumber,
+      items: values.items,
+      waiterId,
+    }
+    onCreateOrder(orderData, values.tableId);
     form.reset();
     onClose();
   };
@@ -63,13 +72,24 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="tableNumber"
+              name="tableId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Table Number</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="e.g. 12" {...field} />
-                  </FormControl>
+                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a table" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {tables.map(table => (
+                        <SelectItem key={table.id} value={table.id}>
+                          Table {table.tableNumber}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

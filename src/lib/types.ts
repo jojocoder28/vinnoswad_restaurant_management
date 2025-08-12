@@ -25,3 +25,9 @@ export interface Waiter {
   id: string;
   name: string;
 }
+
+export interface Table {
+  id: string;
+  tableNumber: number;
+  status: 'available' | 'occupied';
+}
