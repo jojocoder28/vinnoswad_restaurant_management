@@ -2,9 +2,8 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { getSession } from '@/lib/auth';
-import type { DecodedToken } from '@/lib/types';
+import LoadingSpinner from '@/components/ui/loading-spinner';
+
 
 // The middleware now handles all redirection logic.
 // This component just shows a loading state while the middleware determines
@@ -21,7 +20,7 @@ export default function HomePage() {
   
   return (
       <div className="min-h-screen flex items-center justify-center">
-          <p>Loading...</p>
+          <LoadingSpinner />
       </div>
   )
 }

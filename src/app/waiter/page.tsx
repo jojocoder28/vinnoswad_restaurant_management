@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/dashboard-layout';
 import { getSession } from '@/lib/auth';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 export default function WaiterPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -104,7 +105,9 @@ export default function WaiterPage() {
   if (loading || !user) {
     return (
         <DashboardLayout user={user}>
-             <p className="text-xl">Loading dashboard data...</p>
+             <div className="flex justify-center items-center h-64">
+                <LoadingSpinner />
+             </div>
         </DashboardLayout>
     )
   }
