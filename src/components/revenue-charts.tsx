@@ -4,13 +4,21 @@ import { useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { Order, MenuItem, Waiter } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartConfig } from "@/components/ui/chart"
 
 interface RevenueChartsProps {
   orders: Order[];
   menuItems: MenuItem[];
   waiters: Waiter[];
 }
+
+const chartConfig = {
+  revenue: {
+    label: "Revenue",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig
 
 export default function RevenueCharts({ orders, menuItems, waiters }: RevenueChartsProps) {
   const revenueByWaiter = useMemo(() => {
@@ -56,7 +64,7 @@ export default function RevenueCharts({ orders, menuItems, waiters }: RevenueCha
           <CardTitle className='font-headline'>Revenue by Waiter</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+          <ChartContainer config={chartConfig} className="h-[300px] w-full">
             <BarChart data={revenueByWaiter}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
@@ -67,7 +75,7 @@ export default function RevenueCharts({ orders, menuItems, waiters }: RevenueCha
               />
               <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
       <Card>
@@ -75,7 +83,7 @@ export default function RevenueCharts({ orders, menuItems, waiters }: RevenueCha
           <CardTitle className='font-headline'>Top 10 Revenue by Menu Item</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+          <ChartContainer config={chartConfig} className="h-[300px] w-full">
             <BarChart data={revenueByItem} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" tickFormatter={(value) => `$${value}`} />
@@ -86,7 +94,7 @@ export default function RevenueCharts({ orders, menuItems, waiters }: RevenueCha
               />
               <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
     </div>
