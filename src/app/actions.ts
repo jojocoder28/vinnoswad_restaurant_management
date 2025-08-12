@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/mongodb';
 import { initialMenuItems, initialOrders, initialWaiters, initialTables, initialUsers } from '@/lib/mock-data';
-import type { MenuItem, Order, OrderStatus, Waiter, Table, User } from '@/lib/types';
+import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus } from '@/lib/types';
 import { Collection, ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
@@ -55,7 +55,7 @@ function mapId<T>(document: any): T {
 }
 
 // Auth Actions
-export async function registerUser(userData: Omit<User, 'id'>) {
+export async function registerUser(userData: Omit<User, 'id' | 'status'>) {
     const usersCollection = await getCollection<User>('users');
     const existingUser = await usersCollection.findOne({ email: userData.email });
     if (existingUser) {
@@ -63,14 +63,17 @@ export async function registerUser(userData: Omit<User, 'id'>) {
     }
 
     const hashedPassword = await bcrypt.hash(userData.password!, 10);
+    const isPending = userData.role === 'manager' || userData.role === 'waiter';
+    
     const newUser = {
         ...userData,
         password: hashedPassword,
+        status: isPending ? 'pending' : 'approved' as UserStatus,
     };
     
     const result = await usersCollection.insertOne(newUser as Omit<User, 'id'>);
 
-    if (userData.role === 'waiter') {
+    if (userData.role === 'waiter' && !isPending) {
         const waitersCollection = await getCollection<Waiter>('waiters');
         await waitersCollection.insertOne({
             name: userData.name,
@@ -78,7 +81,7 @@ export async function registerUser(userData: Omit<User, 'id'>) {
         } as Omit<Waiter, 'id'>);
     }
     
-    return { success: true, user: mapId<User>({ ...newUser, _id: result.insertedId }) };
+    return { success: true, pending: isPending };
 }
 
 export async function loginUser(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
@@ -87,6 +90,10 @@ export async function loginUser(email: string, password: string): Promise<{ succ
 
     if (!user) {
         return { success: false, error: 'Invalid email or password.' };
+    }
+
+    if (user.status === 'pending') {
+        return { success: false, error: 'Your account is pending approval from an administrator.' };
     }
 
     const passwordsMatch = await bcrypt.compare(password, user.password!);
@@ -122,6 +129,40 @@ export async function getUser(userId: string): Promise<User | null> {
     const usersCollection = await getCollection<User>('users');
     const user = await usersCollection.findOne({ _id: new ObjectId(userId) });
     return mapId<User>(user);
+}
+
+export async function updateUserStatus(userId: string, status: UserStatus): Promise<void> {
+    const usersCollection = await getCollection<User>('users');
+    await usersCollection.updateOne(
+        { _id: new ObjectId(userId) },
+        { $set: { status } }
+    );
+    
+    if (status === 'approved') {
+        const user = await usersCollection.findOne({ _id: new ObjectId(userId) });
+        if (user && user.role === 'waiter') {
+             const waitersCollection = await getCollection<Waiter>('waiters');
+             await waitersCollection.insertOne({
+                name: user.name,
+                userId: userId,
+             } as Omit<Waiter, 'id'>);
+        }
+    }
+
+    revalidatePath('/admin');
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+    const usersCollection = await getCollection<User>('users');
+    const user = await usersCollection.findOne({ _id: new ObjectId(userId) });
+    
+    if (user && user.role === 'waiter') {
+        const waitersCollection = await getCollection<Waiter>('waiters');
+        await waitersCollection.deleteOne({ userId: userId });
+    }
+
+    await usersCollection.deleteOne({ _id: new ObjectId(userId) });
+    revalidatePath('/admin');
 }
 
 // Table Actions

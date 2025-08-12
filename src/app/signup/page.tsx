@@ -47,10 +47,17 @@ export default function SignupPage() {
       });
 
       if (result.success) {
-        toast({
-          title: "Registration Successful",
-          description: "You can now log in with your credentials.",
-        });
+        if(result.pending){
+            toast({
+                title: "Registration Submitted",
+                description: "Your account has been created and is pending admin approval.",
+            });
+        } else {
+            toast({
+                title: "Registration Successful",
+                description: "You can now log in with your credentials.",
+            });
+        }
         router.push('/login');
       } else {
         toast({

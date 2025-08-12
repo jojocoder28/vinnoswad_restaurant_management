@@ -6,11 +6,11 @@ import bcrypt from 'bcryptjs';
 const passwordHash = bcrypt.hashSync('123456', 10);
 
 export const initialUsers: Omit<User, 'id'>[] = [
-    { name: 'Admin User', email: 'admin@eatery.com', role: 'admin', password: passwordHash },
-    { name: 'Manager User', email: 'manager@eatery.com', role: 'manager', password: passwordHash },
-    { name: 'Arjun Kumar', email: 'arjun@eatery.com', role: 'waiter', password: passwordHash },
-    { name: 'Priya Sharma', email: 'priya@eatery.com', role: 'waiter', password: passwordHash },
-    { name: 'Rohan Mehta', email: 'rohan@eatery.com', role: 'waiter', password: passwordHash },
+    { name: 'Admin User', email: 'admin@eatery.com', role: 'admin', password: passwordHash, status: 'approved' },
+    { name: 'Manager User', email: 'manager@eatery.com', role: 'manager', password: passwordHash, status: 'approved' },
+    { name: 'Arjun Kumar', email: 'arjun@eatery.com', role: 'waiter', password: passwordHash, status: 'approved' },
+    { name: 'Priya Sharma', email: 'priya@eatery.com', role: 'waiter', password: passwordHash, status: 'approved' },
+    { name: 'Rohan Mehta', email: 'rohan@eatery.com', role: 'waiter', password: passwordHash, status: 'approved' },
 ];
 
 export const initialWaiters: Omit<Waiter, 'id' | 'userId'>[] = [

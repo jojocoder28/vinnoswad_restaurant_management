@@ -1,5 +1,6 @@
 export type OrderStatus = 'pending' | 'approved' | 'ready' | 'served';
 export type UserRole = 'admin' | 'manager' | 'waiter';
+export type UserStatus = 'pending' | 'approved';
 
 export interface MenuItem {
   id: string;
@@ -36,10 +37,11 @@ export interface Table {
 }
 
 export interface User {
-    id: string;
+    id:string;
     name: string;
     email: string;
     role: UserRole;
+    status: UserStatus;
     password?: string; // Should be a hash, and optional on the client
 }
 
