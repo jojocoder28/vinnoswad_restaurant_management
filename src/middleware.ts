@@ -34,10 +34,10 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/admin') && session.role !== 'admin') {
       return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
-    if (pathname.startsWith('/manager') && session.role !== 'manager' && session.role !== 'admin') {
+    if (pathname.startsWith('/manager') && !['admin', 'manager'].includes(session.role)) {
       return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
-    if (pathname.startsWith('/waiter') && session.role !== 'waiter' && session.role !== 'admin') {
+    if (pathname.startsWith('/waiter') && !['admin', 'waiter'].includes(session.role)) {
       return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
 
