@@ -21,7 +21,7 @@ const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  role: z.enum(['admin', 'manager', 'waiter'], { required_error: 'Please select a role' }),
+  role: z.enum(['manager', 'waiter'], { required_error: 'Please select a role' }),
 });
 
 export default function SignupPage() {
@@ -146,7 +146,6 @@ export default function SignupPage() {
                       <SelectContent>
                         <SelectItem value="waiter">Waiter</SelectItem>
                         <SelectItem value="manager">Manager</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

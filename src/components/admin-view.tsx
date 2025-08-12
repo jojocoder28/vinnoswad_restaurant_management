@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Order, MenuItem, Waiter, User, UserStatus, DecodedToken } from '@/lib/types';
@@ -14,6 +15,7 @@ interface AdminViewProps {
   users: User[];
   onUpdateUserStatus: (userId: string, status: UserStatus) => void;
   onDeleteUser: (userId: string) => void;
+  onCreateUser: (userData: Omit<User, 'id' | 'status'>) => void;
   currentUser: DecodedToken;
 }
 
@@ -23,7 +25,8 @@ export default function AdminView({
     waiters, 
     users, 
     onUpdateUserStatus, 
-    onDeleteUser, 
+    onDeleteUser,
+    onCreateUser, 
     currentUser 
 }: AdminViewProps) {
   const servedOrders = useMemo(() => orders.filter(o => o.status === 'served'), [orders]);
@@ -63,6 +66,7 @@ export default function AdminView({
                 users={users}
                 onUpdateUserStatus={onUpdateUserStatus}
                 onDeleteUser={onDeleteUser}
+                onCreateUser={onCreateUser}
                 currentUser={currentUser}
              />
         </TabsContent>

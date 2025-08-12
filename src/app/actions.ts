@@ -56,7 +56,7 @@ function mapId<T>(document: any): T {
 }
 
 // Auth Actions
-export async function registerUser(userData: Omit<User, 'id' | 'status'>) {
+export async function registerUser(userData: Omit<User, 'id' | 'status'>, isAdminCreating: boolean = false) {
     const usersCollection = await getCollection<User>('users');
     const existingUser = await usersCollection.findOne({ email: userData.email });
     if (existingUser) {
@@ -64,17 +64,38 @@ export async function registerUser(userData: Omit<User, 'id' | 'status'>) {
     }
 
     const hashedPassword = await bcrypt.hash(userData.password!, 10);
-    const isPending = userData.role === 'manager' || userData.role === 'waiter';
+    
+    let status: UserStatus;
+    if (isAdminCreating) {
+        status = 'approved';
+    } else {
+        status = (userData.role === 'manager' || userData.role === 'waiter') ? 'pending' : 'approved';
+    }
     
     const newUser = {
         ...userData,
         password: hashedPassword,
-        status: isPending ? 'pending' : 'approved' as UserStatus,
+        status: status,
     };
     
-    await usersCollection.insertOne(newUser as Omit<User, 'id'>);
+    const result = await usersCollection.insertOne(newUser as Omit<User, 'id'>);
+    const newUserId = result.insertedId.toHexString();
+
+    if (status === 'approved' && userData.role === 'waiter') {
+        const waitersCollection = await getCollection<Waiter>('waiters');
+        await waitersCollection.insertOne({
+            name: userData.name,
+            userId: newUserId,
+        } as Omit<Waiter, 'id'>);
+    }
     
-    return { success: true, pending: isPending };
+    if(!isAdminCreating) {
+        revalidatePath('/login');
+    } else {
+        revalidatePath('/admin');
+    }
+
+    return { success: true, pending: status === 'pending' };
 }
 
 export async function loginUser(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
@@ -272,5 +293,3 @@ export async function getWaiters(): Promise<Waiter[]> {
     const waiters = await waitersCollection.find().toArray();
     return waiters.map(waiter => mapId<Waiter>(waiter));
 }
-
-    

@@ -5,16 +5,18 @@ import type { User, UserStatus, DecodedToken } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, CheckCircle, Trash2, ShieldAlert } from 'lucide-react';
+import { MoreHorizontal, CheckCircle, Trash2, ShieldAlert, PlusCircle } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { useState } from 'react';
+import UserForm from './user-form';
 
 interface UserManagementProps {
   users: User[];
   onUpdateUserStatus: (userId: string, status: UserStatus) => void;
   onDeleteUser: (userId: string) => void;
+  onCreateUser: (userData: Omit<User, 'id' | 'status'>) => void;
   currentUser: DecodedToken;
 }
 
@@ -23,8 +25,9 @@ const statusStyles = {
     approved: "bg-green-500/20 text-green-700 border-green-500/30",
 }
 
-export default function UserManagement({ users, onUpdateUserStatus, onDeleteUser, currentUser }: UserManagementProps) {
+export default function UserManagement({ users, onUpdateUserStatus, onDeleteUser, onCreateUser, currentUser }: UserManagementProps) {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const handleDeleteClick = (user: User) => {
     setUserToDelete(user);
@@ -37,10 +40,20 @@ export default function UserManagement({ users, onUpdateUserStatus, onDeleteUser
     }
   };
 
+  const handleSaveUser = (userData: Omit<User, 'id' | 'status'>) => {
+    onCreateUser(userData);
+  }
+
 
   return (
     <div className="space-y-4">
-      <h3 className="text-2xl font-headline font-semibold">User Accounts</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-2xl font-headline font-semibold">User Accounts</h3>
+        <Button onClick={() => setIsFormOpen(true)}>
+          <PlusCircle className="mr-2 h-4 w-4" /> Create User
+        </Button>
+      </div>
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -110,6 +123,14 @@ export default function UserManagement({ users, onUpdateUserStatus, onDeleteUser
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+
+        {isFormOpen && (
+            <UserForm
+                isOpen={isFormOpen}
+                onClose={() => setIsFormOpen(false)}
+                onSave={handleSaveUser}
+            />
+        )}
     </div>
   );
 }

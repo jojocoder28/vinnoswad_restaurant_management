@@ -2,8 +2,8 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Order, MenuItem, Waiter, DecodedToken, User, UserStatus } from '@/lib/types';
-import { getOrders, getMenuItems, getWaiters, getUsers, updateUserStatus, deleteUser } from '../actions';
+import type { Order, MenuItem, Waiter, DecodedToken, User, UserStatus, UserRole } from '@/lib/types';
+import { getOrders, getMenuItems, getWaiters, getUsers, updateUserStatus, deleteUser, registerUser } from '../actions';
 import AdminView from '@/components/admin-view';
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from '@/components/dashboard-layout';
@@ -57,6 +57,33 @@ export default function AdminPage() {
     }
     fetchData();
   }, [toast, router]);
+
+  const handleCreateUser = async (userData: Omit<User, 'id' | 'status'>) => {
+    try {
+      const result = await registerUser(userData, true); // `isAdminCreating` is true
+      if (result.success) {
+        toast({
+          title: "User Created",
+          description: `Account for ${userData.name} has been created.`,
+        });
+        const updatedUsers = await getUsers();
+        setUsers(updatedUsers);
+      } else {
+        toast({
+          title: "Creation Failed",
+          description: result.error || "An unknown error occurred.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+       toast({
+        title: "Error",
+        description: "Failed to create user.",
+        variant: "destructive",
+      });
+    }
+  };
+
 
   const handleUpdateUserStatus = async (userId: string, status: UserStatus) => {
     try {
@@ -115,6 +142,7 @@ export default function AdminPage() {
             users={users}
             onUpdateUserStatus={handleUpdateUserStatus}
             onDeleteUser={handleDeleteUser}
+            onCreateUser={handleCreateUser}
             currentUser={user}
         />
     </DashboardLayout>
