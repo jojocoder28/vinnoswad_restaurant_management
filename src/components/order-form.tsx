@@ -36,7 +36,7 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
   const form = useForm<z.infer<typeof orderFormSchema>>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
-      tableNumber: undefined,
+      tableNumber: '' as any,
       items: [{ menuItemId: '', quantity: 1 }],
     },
   });
