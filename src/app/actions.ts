@@ -77,10 +77,33 @@ export async function createOrder(orderData: Omit<Order, 'id' | 'timestamp' | 's
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<void> {
     const ordersCollection = await getCollection<Order>('orders');
+    const tablesCollection = await getCollection<Table>('tables');
+
     await ordersCollection.updateOne(
         { _id: new ObjectId(orderId) },
         { $set: { status } }
     );
+    
+    if (status === 'served') {
+        const order = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
+        if (order) {
+            const table = await tablesCollection.findOne({ tableNumber: order.tableNumber });
+            if (table) {
+                const otherOrders = await ordersCollection.countDocuments({
+                    tableNumber: table.tableNumber,
+                    status: { $ne: 'served' },
+                });
+
+                if (otherOrders === 0) {
+                   await tablesCollection.updateOne(
+                       { _id: table._id },
+                       { $set: { status: 'available' }}
+                   );
+                }
+            }
+        }
+    }
+
     revalidatePath('/');
 }
 

@@ -68,10 +68,7 @@ export default function Home() {
     try {
       const newOrder = await createOrder(orderData, tableId);
       setOrders(prev => [newOrder, ...prev]);
-      const table = tables.find(t => t.id === tableId);
-      if (table) {
-        setTables(prev => prev.map(t => t.id === tableId ? {...t, status: 'occupied'} : t));
-      }
+      setTables(prev => prev.map(t => t.id === tableId ? {...t, status: 'occupied'} : t));
       toast({
         title: "Order Created",
         description: `New order for table ${newOrder.tableNumber} has been placed.`,
@@ -88,10 +85,12 @@ export default function Home() {
   const handleUpdateOrderStatus = async (orderId: string, status: Order['status']) => {
     try {
       await updateOrderStatus(orderId, status);
-      setOrders(prev => prev.map(o => (o.id === orderId ? { ...o, status } : o)));
+      const [ordersData, tablesData] = await Promise.all([getOrders(), getTables()]);
+      setOrders(ordersData);
+      setTables(tablesData);
       toast({
         title: "Order Updated",
-        description: `Order ${orderId} status changed to ${status}.`,
+        description: `Order status has been changed to ${status}.`,
       });
     } catch (error) {
        toast({
