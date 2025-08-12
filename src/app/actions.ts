@@ -29,6 +29,7 @@ export async function seedDatabase() {
 }
 
 function mapId<T>(document: any): T {
+  if (!document) return document;
   const { _id, ...rest } = document;
   return { id: _id.toHexString(), ...rest } as T;
 }
@@ -40,11 +41,11 @@ export async function getTables(): Promise<Table[]> {
     return tables.map(table => mapId<Table>(table));
 }
 
-export async function updateTableStatus(tableId: string, status: 'available' | 'occupied'): Promise<void> {
+export async function updateTableStatus(tableId: string, status: 'available' | 'occupied', waiterId?: string | null): Promise<void> {
     const tablesCollection = await getCollection<Table>('tables');
     await tablesCollection.updateOne(
         { _id: new ObjectId(tableId) },
-        { $set: { status } }
+        { $set: { status, waiterId: waiterId ?? null } }
     );
     revalidatePath('/');
 }
@@ -68,7 +69,7 @@ export async function createOrder(orderData: Omit<Order, 'id' | 'timestamp' | 's
     
     // Update table status
     if (tableIdToUpdate) {
-        await updateTableStatus(tableIdToUpdate, 'occupied');
+        await updateTableStatus(tableIdToUpdate, 'occupied', orderData.waiterId);
     }
 
     revalidatePath('/');
@@ -89,15 +90,17 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus): P
         if (order) {
             const table = await tablesCollection.findOne({ tableNumber: order.tableNumber });
             if (table) {
+                // Check if there are other non-served orders for this table by the same waiter
                 const otherOrders = await ordersCollection.countDocuments({
                     tableNumber: table.tableNumber,
+                    waiterId: order.waiterId,
                     status: { $ne: 'served' },
                 });
 
                 if (otherOrders === 0) {
                    await tablesCollection.updateOne(
                        { _id: table._id },
-                       { $set: { status: 'available' }}
+                       { $set: { status: 'available', waiterId: null }}
                    );
                 }
             }

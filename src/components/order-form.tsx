@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from 'react';
 import { z } from 'zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -57,12 +56,23 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
       waiterId,
     }
     onCreateOrder(orderData, values.tableId);
-    form.reset();
+    form.reset({
+      tableId: '',
+      items: [{ menuItemId: '', quantity: 1 }]
+    });
     onClose();
   };
+  
+  const handleClose = () => {
+    form.reset({
+      tableId: '',
+      items: [{ menuItemId: '', quantity: 1 }]
+    });
+    onClose();
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className='font-headline'>Create New Order</DialogTitle>
@@ -76,16 +86,16 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Table Number</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                   <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a table" />
+                        <SelectValue placeholder="Select an available table" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {tables.map(table => (
                         <SelectItem key={table.id} value={table.id}>
-                          Table {table.tableNumber}
+                          Table {table.tableNumber} {table.waiterId === waiterId ? '(Your Table)' : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -143,7 +153,7 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
                 ))}
               </div>
               </ScrollArea>
-               {form.formState.errors.items && (
+               {form.formState.errors.items && typeof form.formState.errors.items === 'object' && 'message' in form.formState.errors.items && (
                  <p className="text-sm font-medium text-destructive mt-2">{form.formState.errors.items.message}</p>
                )}
             </div>
@@ -158,7 +168,7 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
             </Button>
             
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+              <Button type="button" variant="ghost" onClick={handleClose}>Cancel</Button>
               <Button type="submit">Place Order</Button>
             </DialogFooter>
           </form>

@@ -7,6 +7,7 @@ import { PlusCircle } from 'lucide-react';
 import OrderCard from './order-card';
 import OrderForm from './order-form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface WaiterViewProps {
   orders: Order[];
@@ -25,7 +26,10 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
     return orders.filter(order => order.waiterId === selectedWaiterId && order.status !== 'served');
   }, [orders, selectedWaiterId]);
   
-  const availableTables = useMemo(() => tables.filter(table => table.status === 'available'), [tables]);
+  const availableTables = useMemo(() => {
+    // A table is available to a waiter if it's 'available' OR if it's 'occupied' by the same waiter.
+    return tables.filter(table => table.status === 'available' || table.waiterId === selectedWaiterId);
+  }, [tables, selectedWaiterId]);
 
 
   return (
@@ -68,7 +72,14 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
           ))
         ) : (
           <div className="col-span-full text-center text-muted-foreground py-10">
-            <p>No active orders for {waiters.find(w=> w.id === selectedWaiterId)?.name || 'this waiter'}.</p>
+             <Card className="border-dashed">
+                <CardHeader>
+                    <CardTitle>No Active Orders</CardTitle>
+                    <CardDescription>
+                       {waiters.find(w=> w.id === selectedWaiterId)?.name || 'This waiter'} has no active orders. Create a new one to get started.
+                    </CardDescription>
+                </CardHeader>
+             </Card>
           </div>
         )}
       </div>

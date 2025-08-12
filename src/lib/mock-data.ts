@@ -24,19 +24,19 @@ export const initialOrders: Order[] = [
     items: [
       { menuItemId: 'ITEM-005', quantity: 1 },
     ],
-    status: 'served',
+    status: 'pending', // Changed to pending to test the flow
     waiterId: 'WTR-003',
     timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
   },
 ];
 
 export const initialTables: Table[] = [
-  { id: 'TBL-001', tableNumber: 1, status: 'available' },
-  { id: 'TBL-002', tableNumber: 2, status: 'available' },
-  { id: 'TBL-003', tableNumber: 3, status: 'occupied' },
-  { id: 'TBL-004', tableNumber: 4, status: 'available' },
-  { id: 'TBL-005', tableNumber: 5, status: 'available' },
-  { id: 'TBL-006', tableNumber: 6, status: 'available' },
-  { id: 'TBL-007', tableNumber: 7, status: 'available' },
-  { id: 'TBL-008', tableNumber: 8, status: 'available' },
+  { id: 'TBL-001', tableNumber: 1, status: 'available', waiterId: null },
+  { id: 'TBL-002', tableNumber: 2, status: 'available', waiterId: null },
+  { id: 'TBL-003', tableNumber: 3, status: 'occupied', waiterId: 'WTR-003' },
+  { id: 'TBL-004', tableNumber: 4, status: 'available', waiterId: null },
+  { id: 'TBL-005', tableNumber: 5, status: 'available', waiterId: null },
+  { id: 'TBL-006', tableNumber: 6, status: 'available', waiterId: null },
+  { id: 'TBL-007', tableNumber: 7, status: 'available', waiterId: null },
+  { id: 'TBL-008', tableNumber: 8, status: 'available', waiterId: null },
 ];
