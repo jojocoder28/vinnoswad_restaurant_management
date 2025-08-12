@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getSession } from '@/lib/auth';
@@ -6,45 +7,45 @@ export async function middleware(request: NextRequest) {
   const session = await getSession();
   const { pathname } = request.nextUrl;
 
+  const protectedRoutes = ['/admin', '/manager', '/waiter'];
   const publicRoutes = ['/login', '/signup', '/unauthorized'];
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
-  // If trying to access the root, redirect based on session
-  if (pathname === '/') {
-    if (session) {
-        return NextResponse.redirect(new URL(`/${session.role}`, request.url));
-    } else {
-        return NextResponse.redirect(new URL('/login', request.url));
-    }
-  }
-
-  // Allow access to public routes if not logged in, but not the root
-  if (!session && publicRoutes.includes(pathname)) {
-    return NextResponse.next();
-  }
-
-  // If no session and trying to access a protected route, redirect to login
-  if (!session && !publicRoutes.includes(pathname)) {
+  // If there is no session and the user is trying to access a protected route,
+  // redirect them to the login page.
+  if (!session && isProtectedRoute) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // If there is a session, handle redirects
+  // If there is a session, handle role-based access and redirects
   if (session) {
-    // If logged in user is trying to access a public route, redirect them to their dashboard
+    // If the user is logged in and tries to access a public route like /login or /signup,
+    // redirect them to their dashboard.
     if (publicRoutes.includes(pathname)) {
+      return NextResponse.redirect(new URL(`/${session.role}`, request.url));
+    }
+    
+    // If the user is at the root, redirect them to their dashboard
+    if (pathname === '/') {
        return NextResponse.redirect(new URL(`/${session.role}`, request.url));
     }
 
-    // Check role-based access for protected routes
+    // Role-based access control for protected routes
     if (pathname.startsWith('/admin') && session.role !== 'admin') {
-       return NextResponse.redirect(new URL('/unauthorized', request.url));
+      return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
-    if (pathname.startsWith('/manager') && (session.role !== 'manager' && session.role !== 'admin')) {
-        return NextResponse.redirect(new URL('/unauthorized', request.url));
+    if (pathname.startsWith('/manager') && session.role !== 'manager' && session.role !== 'admin') {
+      return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
-    // Allow admin to access waiter page if needed, otherwise restrict
-    if (pathname.startsWith('/waiter') && (session.role !== 'waiter' && session.role !== 'admin')) {
-        return NextResponse.redirect(new URL('/unauthorized', request.url));
+    if (pathname.startsWith('/waiter') && session.role !== 'waiter' && session.role !== 'admin') {
+      return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
+
+  } else {
+      // If there's no session and the user is at the root, redirect to login
+      if (pathname === '/') {
+        return NextResponse.redirect(new URL('/login', request.url));
+      }
   }
 
   return NextResponse.next();
