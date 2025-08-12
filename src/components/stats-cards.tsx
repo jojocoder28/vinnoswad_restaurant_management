@@ -1,5 +1,7 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, ClipboardList, Utensils, CheckSquare } from 'lucide-react';
+import { IndianRupee, ClipboardList, Utensils, CheckSquare } from 'lucide-react';
 
 interface StatsCardsProps {
   totalRevenue: number;
@@ -12,8 +14,8 @@ export default function StatsCards({ totalRevenue, totalOrders, servedOrders, to
   const stats = [
     {
       title: 'Total Revenue',
-      value: `$${totalRevenue.toFixed(2)}`,
-      icon: DollarSign,
+      value: `₹${totalRevenue.toFixed(2)}`,
+      icon: IndianRupee,
     },
     {
       title: 'Total Orders',

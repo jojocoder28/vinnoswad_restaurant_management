@@ -60,7 +60,7 @@ export default function MenuManagement({ menuItems, onAddMenuItem, onUpdateMenuI
               <TableRow key={item.id}>
                 <TableCell className="font-medium">{item.name}</TableCell>
                 <TableCell>{item.category}</TableCell>
-                <TableCell className="text-right font-mono">${item.price.toFixed(2)}</TableCell>
+                <TableCell className="text-right font-mono">₹{item.price.toFixed(2)}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

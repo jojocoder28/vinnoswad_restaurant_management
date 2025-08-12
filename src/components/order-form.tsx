@@ -125,7 +125,7 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
                             <SelectContent>
                               {menuItems.map(item => (
                                 <SelectItem key={item.id} value={item.id}>
-                                  {item.name} - ${item.price.toFixed(2)}
+                                  {item.name} - ₹{item.price.toFixed(2)}
                                 </SelectItem>
                               ))}
                             </SelectContent>

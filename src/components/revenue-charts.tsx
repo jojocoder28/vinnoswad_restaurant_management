@@ -68,10 +68,10 @@ export default function RevenueCharts({ orders, menuItems, waiters }: RevenueCha
             <BarChart data={revenueByWaiter}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
-              <YAxis tickFormatter={(value) => `$${value}`} />
+              <YAxis tickFormatter={(value) => `₹${value}`} />
               <Tooltip
                 cursor={{ fill: 'hsl(var(--muted))' }}
-                content={<ChartTooltipContent formatter={(value) => `$${Number(value).toFixed(2)}`} />}
+                content={<ChartTooltipContent formatter={(value) => `₹${Number(value).toFixed(2)}`} />}
               />
               <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -86,11 +86,11 @@ export default function RevenueCharts({ orders, menuItems, waiters }: RevenueCha
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
             <BarChart data={revenueByItem} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" tickFormatter={(value) => `$${value}`} />
+              <XAxis type="number" tickFormatter={(value) => `₹${value}`} />
               <YAxis type="category" dataKey="name" width={120} />
               <Tooltip
                 cursor={{ fill: 'hsl(var(--muted))' }}
-                content={<ChartTooltipContent formatter={(value) => `$${Number(value).toFixed(2)}`} />}
+                content={<ChartTooltipContent formatter={(value) => `₹${Number(value).toFixed(2)}`} />}
               />
               <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
             </BarChart>

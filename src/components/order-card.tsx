@@ -48,7 +48,7 @@ export default function OrderCard({ order, menuItems, waiterName, actions }: Ord
                 return (
                 <li key={item.menuItemId} className="flex justify-between">
                     <span>{item.quantity}x {menuItem?.name || 'Unknown Item'}</span>
-                    <span className="font-mono">${(menuItem ? menuItem.price * item.quantity : 0).toFixed(2)}</span>
+                    <span className="font-mono">₹{(menuItem ? menuItem.price * item.quantity : 0).toFixed(2)}</span>
                 </li>
                 );
             })}
@@ -57,7 +57,7 @@ export default function OrderCard({ order, menuItems, waiterName, actions }: Ord
         <Separator />
          <div className="flex justify-between font-bold pt-2">
             <span>Total</span>
-            <span className="font-mono">${orderTotal.toFixed(2)}</span>
+            <span className="font-mono">₹{orderTotal.toFixed(2)}</span>
         </div>
       </CardContent>
       {actions && (
