@@ -1,42 +1,27 @@
 
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
-import DashboardLayout from '@/components/dashboard-layout';
 import { getSession } from '@/lib/auth';
 import type { DecodedToken } from '@/lib/types';
-import { useState } from 'react';
 
-// This is a temporary homepage that will redirect based on role.
-// You can replace this with a proper landing page if you wish.
+// The middleware now handles all redirection logic.
+// This component just shows a loading state while the middleware determines
+// where to send the user.
 export default function HomePage() {
-  const router = useRouter();
-  const [user, setUser] = useState<DecodedToken | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function checkSession() {
-        const session = await getSession();
-        if (session) {
-            setUser(session);
-            router.push(`/${session.role}`);
-        } else {
-            router.push('/login');
-        }
-        setLoading(false);
-    }
-    checkSession();
-  }, [router]);
+    // We don't need to do anything here because the middleware will handle redirection.
+    // We can just set loading to false after a moment.
+    const timer = setTimeout(() => setLoading(false), 500); // Simulate a small delay
+    return () => clearTimeout(timer);
+  }, []);
   
-  if(loading) {
-    return (
-        <div className="min-h-screen flex items-center justify-center">
-            <p>Loading...</p>
-        </div>
-    )
-  }
-
-  return null;
+  return (
+      <div className="min-h-screen flex items-center justify-center">
+          <p>Loading...</p>
+      </div>
+  )
 }
