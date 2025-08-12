@@ -45,7 +45,7 @@ export default function LoginPage() {
                 title: "Login Successful",
                 description: `Welcome back, ${result.user.name}!`,
             });
-            // The middleware will handle the redirection.
+            // The middleware now handles all redirection logic.
             // We'll force a reload of the current page which will trigger the middleware.
             router.refresh();
         } else {
@@ -79,7 +79,7 @@ export default function LoginPage() {
           <Terminal className="h-4 w-4" />
           <AlertTitle>Demo Accounts</AlertTitle>
           <AlertDescription>
-           <p className="text-xs">Use <span className="font-semibold">admin@eatery.com</span>, <span className="font-semibold">manager@eatery.com</span>, or <span className="font-semibold">arjun@eatery.com</span> with password <span className="font-mono text-primary bg-primary/10 px-1 rounded">123456</span> to log in.</p>
+           <div className="text-xs">Use <span className="font-semibold">admin@eatery.com</span>, <span className="font-semibold">manager@eatery.com</span>, or <span className="font-semibold">arjun@eatery.com</span> with password <span className="font-mono text-primary bg-primary/10 px-1 rounded">123456</span> to log in.</div>
           </AlertDescription>
       </Alert>
 

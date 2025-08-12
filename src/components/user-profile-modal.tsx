@@ -93,10 +93,12 @@ export default function UserProfileModal({ isOpen, onClose, user, orders, menuIt
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle className='font-headline text-2xl'>Employee Profile: {user.name}</DialogTitle>
+                    <div className="flex items-center gap-4">
+                        <DialogTitle className='font-headline text-2xl'>Employee Profile: {user.name}</DialogTitle>
+                        <Badge variant="outline" className="capitalize">{user.role}</Badge>
+                    </div>
                     <DialogDescription>
                         Performance overview for <span className="font-semibold">{user.email}</span>.
-                         <Badge variant="outline" className="ml-2 capitalize">{user.role}</Badge>
                     </DialogDescription>
                 </DialogHeader>
 
