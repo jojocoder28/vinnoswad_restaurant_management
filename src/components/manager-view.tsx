@@ -4,11 +4,11 @@
 import type { Order, MenuItem, OrderStatus, Waiter } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ChefHat, Bell, Utensils, Package } from 'lucide-react';
+import { CheckCircle, ChefHat, Bell, Utensils, Package, Clock } from 'lucide-react';
 import OrderCard from './order-card';
 import MenuManagement from './menu-management';
 import { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 
 interface ManagerViewProps {
   orders: Order[];
@@ -45,6 +45,7 @@ export default function ManagerView({
   const pendingOrders = useMemo(() => orders.filter(o => o.status === 'pending'), [orders]);
   const approvedOrders = useMemo(() => orders.filter(o => o.status === 'approved'), [orders]);
   const preparedOrders = useMemo(() => orders.filter(o => o.status === 'prepared'), [orders]);
+  const readyOrders = useMemo(() => orders.filter(o => o.status === 'ready'), [orders]);
 
   const getWaiterName = (waiterId: string) => waiters.find(w => w.id === waiterId)?.name || "Unknown";
   
@@ -80,7 +81,7 @@ export default function ManagerView({
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
                <StatCard title="Items Ordered Today" value={dailyItemsOrdered} icon={Package} />
                <StatCard title="Items Served Today" value={dailyItemsServed} icon={Utensils} />
-               <StatCard title="Orders Pending" value={pendingOrders.length} icon={CheckCircle} />
+               <StatCard title="Orders Pending" value={pendingOrders.length} icon={Clock} />
                <StatCard title="Orders in Kitchen" value={approvedOrders.length} icon={ChefHat} />
             </div>
         </div>
@@ -150,6 +151,24 @@ export default function ManagerView({
               ))
             ) : (
                 <p className="col-span-full text-muted-foreground">No orders are currently in the kitchen.</p>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-xl font-headline font-semibold mb-4">Waiting for Service</h3>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {readyOrders.length > 0 ? (
+              readyOrders.map(order => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  menuItems={menuItems}
+                  waiterName={getWaiterName(order.waiterId)}
+                />
+              ))
+            ) : (
+                <p className="col-span-full text-muted-foreground">No orders are currently waiting to be served.</p>
             )}
           </div>
         </div>
