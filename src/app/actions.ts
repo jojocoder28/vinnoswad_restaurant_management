@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -33,7 +34,7 @@ export async function seedDatabase() {
     if (usersCount === 0) {
         await usersCollection.insertMany(initialUsers as any[]);
         const waitersCollection = await getCollection<Waiter>('waiters');
-        const users = await usersCollection.find({ role: 'waiter' }).toArray();
+        const users = await usersCollection.find({ role: 'waiter', status: 'approved' }).toArray();
 
         const waitersToInsert = users.map(user => ({
             name: user.name,
@@ -71,15 +72,7 @@ export async function registerUser(userData: Omit<User, 'id' | 'status'>) {
         status: isPending ? 'pending' : 'approved' as UserStatus,
     };
     
-    const result = await usersCollection.insertOne(newUser as Omit<User, 'id'>);
-
-    if (userData.role === 'waiter' && !isPending) {
-        const waitersCollection = await getCollection<Waiter>('waiters');
-        await waitersCollection.insertOne({
-            name: userData.name,
-            userId: result.insertedId.toHexString()
-        } as Omit<Waiter, 'id'>);
-    }
+    await usersCollection.insertOne(newUser as Omit<User, 'id'>);
     
     return { success: true, pending: isPending };
 }
@@ -279,3 +272,5 @@ export async function getWaiters(): Promise<Waiter[]> {
     const waiters = await waitersCollection.find().toArray();
     return waiters.map(waiter => mapId<Waiter>(waiter));
 }
+
+    
