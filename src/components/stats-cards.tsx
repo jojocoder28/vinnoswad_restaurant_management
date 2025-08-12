@@ -1,0 +1,50 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DollarSign, ClipboardList, Utensils, CheckSquare } from 'lucide-react';
+
+interface StatsCardsProps {
+  totalRevenue: number;
+  totalOrders: number;
+  servedOrders: number;
+  totalMenuItems: number;
+}
+
+export default function StatsCards({ totalRevenue, totalOrders, servedOrders, totalMenuItems }: StatsCardsProps) {
+  const stats = [
+    {
+      title: 'Total Revenue',
+      value: `$${totalRevenue.toFixed(2)}`,
+      icon: DollarSign,
+    },
+    {
+      title: 'Total Orders',
+      value: totalOrders,
+      icon: ClipboardList,
+    },
+    {
+      title: 'Orders Served',
+      value: servedOrders,
+      icon: CheckSquare,
+    },
+    {
+      title: 'Menu Items',
+      value: totalMenuItems,
+      icon: Utensils,
+    },
+  ];
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {stats.map(stat => (
+        <Card key={stat.title}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+            <stat.icon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stat.value}</div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
