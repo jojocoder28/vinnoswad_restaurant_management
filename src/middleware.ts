@@ -5,6 +5,10 @@ import { getSession } from '@/lib/auth';
 
 export async function middleware(request: NextRequest) {
   const session = await getSession();
+  const sessionCookie = request.cookies.get('session')?.value;
+  console.log('Session Cookie from middleware:', sessionCookie);
+  console.log('Decoded Session from middleware:', session);
+
   const { pathname } = request.nextUrl;
 
   const protectedRoutes = ['/admin', '/manager', '/waiter'];
