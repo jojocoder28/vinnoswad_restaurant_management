@@ -45,6 +45,8 @@ export default function LoginPage() {
                 title: "Login Successful",
                 description: `Welcome back, ${result.user.name}!`,
             });
+            // The middleware will handle the redirection, but we can force a reload
+            // to ensure the middleware re-evaluates the session.
             router.push(`/${result.user.role}`);
         } else {
             toast({

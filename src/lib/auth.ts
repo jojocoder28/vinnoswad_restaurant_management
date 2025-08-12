@@ -29,7 +29,7 @@ export async function decrypt(input: string): Promise<any> {
 }
 
 export async function getSession(): Promise<DecodedToken | null> {
-  const sessionCookie = cookies().get('session')?.value;
+  const sessionCookie = (await cookies()).get('session')?.value;
   if (!sessionCookie) return null;
   
   const session = await decrypt(sessionCookie);
@@ -42,7 +42,7 @@ export async function getSession(): Promise<DecodedToken | null> {
     const newExpires = new Date(now + 60 * 60 * 1000); // 1 hour from now
     session.exp = Math.floor(newExpires.getTime() / 1000);
     const newSessionToken = await encrypt({ user: session.user, expires: newExpires });
-    cookies().set('session', newSessionToken, { expires: newExpires, httpOnly: true });
+    (await cookies()).set('session', newSessionToken, { expires: newExpires, httpOnly: true });
   }
 
   return session.user;
@@ -57,7 +57,7 @@ export async function updateSession(request: NextRequest) {
     const res = await encrypt(parsed);
     
     const cookieStore = cookies();
-    cookieStore.set('session', res, {
+    (await cookieStore).set('session', res, {
         httpOnly: true,
         expires: parsed.expires,
     });

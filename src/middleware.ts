@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getSession, updateSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth';
 
 export async function middleware(request: NextRequest) {
   const session = await getSession();
@@ -8,11 +8,6 @@ export async function middleware(request: NextRequest) {
 
   const publicRoutes = ['/login', '/signup', '/unauthorized'];
 
-  // Redirect to role-specific page if logged in and trying to access a public route
-  if (session && publicRoutes.includes(pathname)) {
-      return NextResponse.redirect(new URL(`/${session.role}`, request.url));
-  }
-  
   // If trying to access the root, redirect based on session
   if (pathname === '/') {
     if (session) {
@@ -21,32 +16,38 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url));
     }
   }
-  
-  // Allow access to public routes if not logged in
+
+  // Allow access to public routes if not logged in, but not the root
   if (!session && publicRoutes.includes(pathname)) {
     return NextResponse.next();
   }
 
-  // If no session and not a public route, redirect to login
-  if (!session) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-  
-  // Check role-based access for protected routes
-  if (pathname.startsWith('/admin') && session.role !== 'admin') {
-     return NextResponse.redirect(new URL('/unauthorized', request.url));
-  }
-  if (pathname.startsWith('/manager') && (session.role !== 'manager' && session.role !== 'admin')) {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
-  }
-  if (pathname.startsWith('/waiter') && (session.role !== 'waiter' && session.role !== 'admin')) {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
+  // If no session and trying to access a protected route, redirect to login
+  if (!session && !publicRoutes.includes(pathname)) {
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  const response = NextResponse.next();
-  // We are not calling updateSession here as it caused issues with cookies
-  // Instead, the session is refreshed on every getSession call if it's close to expiring
-  return response;
+  // If there is a session, handle redirects
+  if (session) {
+    // If logged in user is trying to access a public route, redirect them to their dashboard
+    if (publicRoutes.includes(pathname)) {
+       return NextResponse.redirect(new URL(`/${session.role}`, request.url));
+    }
+
+    // Check role-based access for protected routes
+    if (pathname.startsWith('/admin') && session.role !== 'admin') {
+       return NextResponse.redirect(new URL('/unauthorized', request.url));
+    }
+    if (pathname.startsWith('/manager') && (session.role !== 'manager' && session.role !== 'admin')) {
+        return NextResponse.redirect(new URL('/unauthorized', request.url));
+    }
+    // Allow admin to access waiter page if needed, otherwise restrict
+    if (pathname.startsWith('/waiter') && (session.role !== 'waiter' && session.role !== 'admin')) {
+        return NextResponse.redirect(new URL('/unauthorized', request.url));
+    }
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
