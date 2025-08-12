@@ -1,4 +1,5 @@
 export type OrderStatus = 'pending' | 'approved' | 'ready' | 'served';
+export type UserRole = 'admin' | 'manager' | 'waiter';
 
 export interface MenuItem {
   id: string;
@@ -24,6 +25,7 @@ export interface Order {
 export interface Waiter {
   id: string;
   name: string;
+  userId: string;
 }
 
 export interface Table {
@@ -31,4 +33,11 @@ export interface Table {
   tableNumber: number;
   status: 'available' | 'occupied';
   waiterId?: string | null;
+}
+
+export interface User {
+    id: string;
+    name: string;
+    role: UserRole;
+    // In a real app, you'd have a password hash
 }

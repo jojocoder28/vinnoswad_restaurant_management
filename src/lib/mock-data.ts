@@ -1,9 +1,17 @@
-import type { MenuItem, Order, Waiter, Table } from './types';
+import type { MenuItem, Order, Waiter, Table, User } from './types';
+
+export const initialUsers: User[] = [
+    { id: 'USER-001', name: 'Admin User', role: 'admin' },
+    { id: 'USER-002', name: 'Manager User', role: 'manager' },
+    { id: 'USER-003', name: 'Arjun', role: 'waiter' },
+    { id: 'USER-004', name: 'Priya', role: 'waiter' },
+    { id: 'USER-005', name: 'Rohan', role: 'waiter' },
+];
 
 export const initialWaiters: Waiter[] = [
-  { id: 'WTR-001', name: 'Arjun' },
-  { id: 'WTR-002', name: 'Priya' },
-  { id: 'WTR-003', name: 'Rohan' },
+  { id: 'WTR-001', name: 'Arjun', userId: 'USER-003' },
+  { id: 'WTR-002', name: 'Priya', userId: 'USER-004' },
+  { id: 'WTR-003', name: 'Rohan', userId: 'USER-005' },
 ];
 
 export const initialMenuItems: MenuItem[] = [

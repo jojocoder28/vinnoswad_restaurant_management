@@ -1,13 +1,13 @@
+
 "use client";
 
-import React, { useMemo, useState } from 'react';
-import type { Order, MenuItem, Waiter, OrderStatus, Table } from '@/lib/types';
+import React, { useMemo, useState, useEffect } from 'react';
+import type { Order, MenuItem, Waiter, OrderStatus, Table, User } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import OrderCard from './order-card';
 import OrderForm from './order-form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface WaiterViewProps {
@@ -17,17 +17,22 @@ interface WaiterViewProps {
   tables: Table[];
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
   onCreateOrder: (order: Omit<Order, 'id' | 'timestamp' | 'status'>, tableId: string) => void;
+  currentUser: User;
 }
 
-export default function WaiterView({ orders, menuItems, waiters, tables, onUpdateStatus, onCreateOrder }: WaiterViewProps) {
+export default function WaiterView({ orders, menuItems, waiters, tables, onUpdateStatus, onCreateOrder, currentUser }: WaiterViewProps) {
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
-  const [selectedWaiterId, setSelectedWaiterId] = useState<string>(waiters[0]?.id || '');
+  
+  const selectedWaiter = useMemo(() => {
+    return waiters.find(w => w.userId === currentUser.id);
+  }, [waiters, currentUser]);
 
   const { activeOrders, servedOrders } = useMemo(() => {
+    if (!selectedWaiter) return { activeOrders: [], servedOrders: [] };
     const active: Order[] = [];
     const served: Order[] = [];
     orders.forEach(order => {
-      if (order.waiterId === selectedWaiterId) {
+      if (order.waiterId === selectedWaiter.id) {
         if (order.status === 'served') {
           served.push(order);
         } else {
@@ -36,32 +41,23 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
       }
     });
     return { activeOrders: active, servedOrders: served.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) };
-  }, [orders, selectedWaiterId]);
+  }, [orders, selectedWaiter]);
   
   const availableTables = useMemo(() => {
-    return tables.filter(table => table.status === 'available' || table.waiterId === selectedWaiterId);
-  }, [tables, selectedWaiterId]);
+    if (!selectedWaiter) return [];
+    return tables.filter(table => table.status === 'available' || table.waiterId === selectedWaiter.id);
+  }, [tables, selectedWaiter]);
 
-  const selectedWaiter = useMemo(() => waiters.find(w => w.id === selectedWaiterId), [waiters, selectedWaiterId]);
 
+  if (!selectedWaiter) {
+    return <div>Error: Waiter profile not found for the current user.</div>
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Viewing as:</span>
-            <Select value={selectedWaiterId} onValueChange={setSelectedWaiterId}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select Waiter" />
-              </SelectTrigger>
-              <SelectContent>
-                {waiters.map(waiter => (
-                  <SelectItem key={waiter.id} value={waiter.id}>{waiter.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-        </div>
-        <Button onClick={() => setIsOrderFormOpen(true)} disabled={!selectedWaiterId || availableTables.length === 0}>
+        <p>You are logged in as <span className="font-semibold">{selectedWaiter.name}</span>.</p>
+        <Button onClick={() => setIsOrderFormOpen(true)} disabled={!selectedWaiter.id || availableTables.length === 0}>
           <PlusCircle className="mr-2 h-4 w-4" /> New Order
         </Button>
       </div>
@@ -96,7 +92,7 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
                             <CardHeader>
                                 <CardTitle>No Active Orders</CardTitle>
                                 <CardDescription>
-                                {selectedWaiter?.name || 'This waiter'} has no active orders. Create a new one to get started.
+                                You have no active orders. Create a new one to get started.
                                 </CardDescription>
                             </CardHeader>
                         </Card>
@@ -122,7 +118,7 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
                             <CardHeader>
                                 <CardTitle>No Served Orders</CardTitle>
                                 <CardDescription>
-                                {selectedWaiter?.name || 'This waiter'} has not served any orders yet.
+                                You have not served any orders yet.
                                 </CardDescription>
                             </CardHeader>
                         </Card>
@@ -130,15 +126,13 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
                     )}
                 </div>
             </TabsContent>
-
       </Tabs>
-
 
       <OrderForm
         isOpen={isOrderFormOpen}
         onClose={() => setIsOrderFormOpen(false)}
         menuItems={menuItems}
-        waiterId={selectedWaiterId}
+        waiterId={selectedWaiter.id}
         onCreateOrder={onCreateOrder}
         tables={availableTables}
       />

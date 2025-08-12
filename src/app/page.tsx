@@ -1,155 +1,59 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
-import type { Order, MenuItem, Waiter, Table } from '@/lib/types';
-import {
-  getOrders,
-  createOrder,
-  updateOrderStatus,
-  getMenuItems,
-  addMenuItem,
-  updateMenuItem,
-  deleteMenuItem,
-  getWaiters,
-  seedDatabase,
-  getTables
-} from './actions';
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Logo from '@/components/logo';
-import WaiterView from '@/components/waiter-view';
-import ManagerView from '@/components/manager-view';
-import AdminView from '@/components/admin-view';
-import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import type { User } from '@/lib/types';
+import { getUsers, seedDatabase } from './actions';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Logo from '@/components/logo';
 
-export default function Home() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [waiters, setWaiters] = useState<Waiter[]>([]);
-  const [tables, setTables] = useState<Table[]>([]);
+export default function LoginPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    async function fetchData() {
+    async function setup() {
       try {
         setLoading(true);
-        await seedDatabase(); // Seeds database with mock data if it's empty
-        const [ordersData, menuItemsData, waitersData, tablesData] = await Promise.all([
-          getOrders(),
-          getMenuItems(),
-          getWaiters(),
-          getTables(),
-        ]);
-        setOrders(ordersData);
-        setMenuItems(menuItemsData);
-        setWaiters(waitersData);
-        setTables(tablesData);
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-        toast({
-          title: "Error",
-          description: "Could not load data from the database.",
-          variant: "destructive",
-        });
+        await seedDatabase();
+        const usersData = await getUsers();
+        setUsers(usersData);
+        if(usersData.length > 0) {
+            setSelectedUserId(usersData[0].id)
+        }
+      } catch (e) {
+        console.error(e);
+        setError('Failed to connect to the database. Please check the connection string.');
       } finally {
         setLoading(false);
       }
     }
-    fetchData();
-  }, [toast]);
+    setup();
+  }, []);
 
-  const pendingOrdersCount = useMemo(() => orders.filter(o => o.status === 'pending').length, [orders]);
-
-  const handleCreateOrder = async (orderData: Omit<Order, 'id' | 'timestamp' | 'status'>, tableId: string) => {
-    try {
-      const newOrder = await createOrder(orderData, tableId);
-      setOrders(prev => [newOrder, ...prev]);
-      setTables(prev => prev.map(t => t.id === tableId ? {...t, status: 'occupied'} : t));
-      toast({
-        title: "Order Created",
-        description: `New order for table ${newOrder.tableNumber} has been placed.`,
-      });
-    } catch (error) {
-       toast({
-        title: "Error",
-        description: "Failed to create order.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUpdateOrderStatus = async (orderId: string, status: Order['status']) => {
-    try {
-      await updateOrderStatus(orderId, status);
-      const [ordersData, tablesData] = await Promise.all([getOrders(), getTables()]);
-      setOrders(ordersData);
-      setTables(tablesData);
-      toast({
-        title: "Order Updated",
-        description: `Order status has been changed to ${status}.`,
-      });
-    } catch (error) {
-       toast({
-        title: "Error",
-        description: "Failed to update order status.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleAddMenuItem = async (itemData: Omit<MenuItem, 'id'>) => {
-    try {
-      const newItem = await addMenuItem(itemData);
-      setMenuItems(prev => [...prev, newItem]);
-      toast({
-        title: "Menu Item Added",
-        description: `${newItem.name} has been added to the menu.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add menu item.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUpdateMenuItem = async (updatedItem: MenuItem) => {
-    try {
-      await updateMenuItem(updatedItem);
-      setMenuItems(prev => prev.map(item => (item.id === updatedItem.id ? updatedItem : item)));
-       toast({
-        title: "Menu Item Updated",
-        description: `${updatedItem.name} has been updated.`,
-      });
-    } catch(error) {
-        toast({
-        title: "Error",
-        description: "Failed to update menu item.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteMenuItem = async (itemId: string) => {
-    try {
-      await deleteMenuItem(itemId);
-      setMenuItems(prev => prev.filter(item => item.id !== itemId));
-       toast({
-        title: "Menu Item Deleted",
-        description: `An item has been removed from the menu.`,
-        variant: 'destructive'
-      });
-    } catch (error) {
-        toast({
-        title: "Error",
-        description: "Failed to delete menu item.",
-        variant: "destructive",
-      });
+  const handleLogin = () => {
+    const user = users.find(u => u.id === selectedUserId);
+    if (user) {
+      // In a real app, you'd use a proper session management system.
+      // For this demo, we'll use localStorage.
+      localStorage.setItem('loggedInUser', JSON.stringify(user));
+      switch(user.role) {
+        case 'admin':
+          router.push('/admin');
+          break;
+        case 'manager':
+          router.push('/manager');
+          break;
+        case 'waiter':
+          router.push('/waiter');
+          break;
+      }
     }
   };
 
@@ -164,81 +68,53 @@ export default function Home() {
     )
   }
 
+  if (error) {
+     return (
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+            <Card className="w-full max-w-sm border-destructive">
+                <CardHeader>
+                    <CardTitle>Connection Error</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-destructive">{error}</p>
+                     <p className="text-sm text-muted-foreground mt-4">Please make sure your MongoDB URI is correct in the `.env.local` file and that the database is accessible.</p>
+                </CardContent>
+            </Card>
+        </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto p-4 md:p-8">
-        <header className="mb-8 flex items-center justify-between">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <header className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Logo />
             <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">EateryFlow</h1>
           </div>
-        </header>
-
-        <main>
-          <Tabs defaultValue="waiter" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 md:w-fit">
-              <TabsTrigger value="waiter">Waiter</TabsTrigger>
-              <TabsTrigger value="manager" className="relative">
-                Manager
-                {pendingOrdersCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-4 w-4 bg-primary text-primary-foreground text-xs items-center justify-center">{pendingOrdersCount}</span>
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="admin">Admin</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="waiter">
-              <Card>
-                <CardHeader>
-                  <CardTitle className='font-headline'>Waiter View</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <WaiterView
-                    orders={orders}
-                    menuItems={menuItems}
-                    waiters={waiters}
-                    tables={tables}
-                    onUpdateStatus={handleUpdateOrderStatus}
-                    onCreateOrder={handleCreateOrder}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="manager">
-              <Card>
-                <CardHeader>
-                  <CardTitle className='font-headline'>Manager Dashboard</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ManagerView
-                    orders={orders}
-                    menuItems={menuItems}
-                    onUpdateStatus={handleUpdateOrderStatus}
-                    onAddMenuItem={handleAddMenuItem}
-                    onUpdateMenuItem={handleUpdateMenuItem}
-                    onDeleteMenuItem={handleDeleteMenuItem}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="admin">
-              <Card>
-                <CardHeader>
-                  <CardTitle className='font-headline'>Admin Overview</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <AdminView orders={orders} menuItems={menuItems} waiters={waiters} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </main>
-      </div>
+      </header>
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="font-headline text-2xl">Login</CardTitle>
+          <CardDescription>Select a user to view their dashboard.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a user" />
+            </SelectTrigger>
+            <SelectContent>
+              {users.map(user => (
+                <SelectItem key={user.id} value={user.id}>
+                  {user.name} ({user.role})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={handleLogin} className="w-full" disabled={!selectedUserId}>
+            Login
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
