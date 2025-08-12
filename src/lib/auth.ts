@@ -1,3 +1,5 @@
+'use server';
+
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import type { NextRequest, NextResponse } from 'next/server';
@@ -21,15 +23,29 @@ export async function decrypt(input: string): Promise<any> {
     });
     return payload;
   } catch (error) {
-    console.log(error);
+    // console.log(error); // Commented out to avoid logging expected errors
     return null;
   }
 }
 
 export async function getSession(): Promise<DecodedToken | null> {
-  const session = cookies().get('session')?.value;
+  const sessionCookie = cookies().get('session')?.value;
+  if (!sessionCookie) return null;
+  
+  const session = await decrypt(sessionCookie);
   if (!session) return null;
-  return await decrypt(session);
+
+  // Refresh the session if it's about to expire (e.g., in the last 15 minutes)
+  const now = Date.now();
+  const expires = session.exp * 1000;
+  if (expires - now < 15 * 60 * 1000) {
+    const newExpires = new Date(now + 60 * 60 * 1000); // 1 hour from now
+    session.exp = Math.floor(newExpires.getTime() / 1000);
+    const newSessionToken = await encrypt({ user: session.user, expires: newExpires });
+    cookies().set('session', newSessionToken, { expires: newExpires, httpOnly: true });
+  }
+
+  return session.user;
 }
 
 export async function updateSession(request: NextRequest) {
