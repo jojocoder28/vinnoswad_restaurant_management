@@ -1,15 +1,14 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
-import type { Order, MenuItem, Waiter, Table, User } from '@/lib/types';
+import { useState, useEffect } from 'react';
+import type { Order, MenuItem, Waiter, Table, DecodedToken } from '@/lib/types';
 import {
   getOrders,
   createOrder,
   updateOrderStatus,
   getMenuItems,
   getWaiters,
-  seedDatabase,
   getTables
 } from '../actions';
 
@@ -17,6 +16,7 @@ import WaiterView from '@/components/waiter-view';
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/dashboard-layout';
+import { getSession } from '@/lib/auth';
 
 export default function WaiterPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -24,34 +24,28 @@ export default function WaiterPage() {
   const [waiters, setWaiters] = useState<Waiter[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<DecodedToken | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
-    const loggedInUser = localStorage.getItem('loggedInUser');
-    if (!loggedInUser) {
-        router.push('/');
-        return;
-    }
-    const parsedUser = JSON.parse(loggedInUser);
-    if(parsedUser.role !== 'waiter') {
-        router.push('/');
-        return;
-    }
-    setUser(parsedUser);
-
-
     async function fetchData() {
       try {
         setLoading(true);
-        await seedDatabase();
-        const [ordersData, menuItemsData, waitersData, tablesData] = await Promise.all([
+        const [ordersData, menuItemsData, waitersData, tablesData, session] = await Promise.all([
           getOrders(),
           getMenuItems(),
           getWaiters(),
           getTables(),
+          getSession(),
         ]);
+        
+        if (!session) {
+            router.push('/login');
+            return;
+        }
+        setUser(session);
+
         setOrders(ordersData);
         setMenuItems(menuItemsData);
         setWaiters(waitersData);

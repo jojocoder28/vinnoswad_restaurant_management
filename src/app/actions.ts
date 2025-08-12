@@ -5,13 +5,16 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { initialMenuItems, initialOrders, initialWaiters, initialTables, initialUsers } from '@/lib/mock-data';
 import type { MenuItem, Order, OrderStatus, Waiter, Table, User } from '@/lib/types';
 import { Collection, ObjectId } from 'mongodb';
+import bcrypt from 'bcryptjs';
+import { cookies } from 'next/headers';
+import { encrypt, getSession } from '@/lib/auth';
 
-async function getCollection<T extends { id: string }>(collectionName: string): Promise<Collection<Omit<T, 'id'>>> {
+async function getCollection<T extends { id?: string }>(collectionName: string): Promise<Collection<Omit<T, 'id'>>> {
     const { db } = await connectToDatabase();
     return db.collection<Omit<T, 'id'>>(collectionName);
 }
 
-async function seedCollection<T extends { id: string }>(collectionName: string, data: T[]) {
+async function seedCollection<T extends { id?: string }>(collectionName: string, data: T[]) {
     const collection = await getCollection(collectionName);
     const count = await collection.countDocuments();
     if (count === 0) {
@@ -23,16 +26,89 @@ async function seedCollection<T extends { id: string }>(collectionName: string, 
 
 export async function seedDatabase() {
     await seedCollection('menu', initialMenuItems);
-    await seedCollection('waiters', initialWaiters);
+    
+    // Seed users and then link waiters to them
+    const usersCollection = await getCollection<User>('users');
+    const usersCount = await usersCollection.countDocuments();
+    if (usersCount === 0) {
+        await usersCollection.insertMany(initialUsers as any[]);
+        const waitersCollection = await getCollection<Waiter>('waiters');
+        const users = await usersCollection.find({ role: 'waiter' }).toArray();
+
+        const waitersToInsert = users.map(user => ({
+            name: user.name,
+            userId: user._id.toHexString()
+        }));
+        if(waitersToInsert.length > 0){
+             await waitersCollection.insertMany(waitersToInsert as any[]);
+        }
+    }
+    
     await seedCollection('orders', initialOrders);
     await seedCollection('tables', initialTables);
-    await seedCollection('users', initialUsers);
 }
 
 function mapId<T>(document: any): T {
   if (!document) return document;
   const { _id, ...rest } = document;
   return { id: _id.toHexString(), ...rest } as T;
+}
+
+// Auth Actions
+export async function registerUser(userData: Omit<User, 'id'>) {
+    const usersCollection = await getCollection<User>('users');
+    const existingUser = await usersCollection.findOne({ email: userData.email });
+    if (existingUser) {
+        return { success: false, error: 'User with this email already exists.' };
+    }
+
+    const hashedPassword = await bcrypt.hash(userData.password!, 10);
+    const newUser = {
+        ...userData,
+        password: hashedPassword,
+    };
+    
+    const result = await usersCollection.insertOne(newUser as Omit<User, 'id'>);
+
+    if (userData.role === 'waiter') {
+        const waitersCollection = await getCollection<Waiter>('waiters');
+        await waitersCollection.insertOne({
+            name: userData.name,
+            userId: result.insertedId.toHexString()
+        } as Omit<Waiter, 'id'>);
+    }
+    
+    return { success: true, user: mapId<User>({ ...newUser, _id: result.insertedId }) };
+}
+
+export async function loginUser(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
+    const usersCollection = await getCollection<User>('users');
+    const user = await usersCollection.findOne({ email });
+
+    if (!user) {
+        return { success: false, error: 'Invalid email or password.' };
+    }
+
+    const passwordsMatch = await bcrypt.compare(password, user.password!);
+    if (!passwordsMatch) {
+        return { success: false, error: 'Invalid email or password.' };
+    }
+    
+    const mappedUser = mapId<User>(user);
+    const { password: _, ...userSessionData } = mappedUser;
+
+    // Create the session
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const session = await encrypt({ user: userSessionData, expires });
+
+    // Save the session in a cookie
+    cookies().set('session', session, { expires, httpOnly: true });
+
+    return { success: true, user: mappedUser };
+}
+
+export async function logout() {
+  cookies().set('session', '', { expires: new Date(0) });
 }
 
 // User Actions
@@ -48,7 +124,6 @@ export async function getUser(userId: string): Promise<User | null> {
     return mapId<User>(user);
 }
 
-
 // Table Actions
 export async function getTables(): Promise<Table[]> {
     const tablesCollection = await getCollection<Table>('tables');
@@ -62,7 +137,6 @@ export async function updateTableStatus(tableId: string, status: 'available' | '
         { _id: new ObjectId(tableId) },
         { $set: { status, waiterId: waiterId ?? null } }
     );
-    revalidatePath('/');
     revalidatePath('/waiter');
 }
 

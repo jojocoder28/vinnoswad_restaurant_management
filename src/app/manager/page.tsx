@@ -1,56 +1,47 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
-import type { Order, MenuItem, Waiter, User } from '@/lib/types';
+import { useState, useEffect } from 'react';
+import type { Order, MenuItem, DecodedToken } from '@/lib/types';
 import {
   getOrders,
-  createOrder,
   updateOrderStatus,
   getMenuItems,
   addMenuItem,
   updateMenuItem,
   deleteMenuItem,
-  getWaiters,
-  seedDatabase,
-  getTables
 } from '../actions';
 
 import ManagerView from '@/components/manager-view';
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/dashboard-layout';
+import { getSession } from '@/lib/auth';
 
 export default function ManagerPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<DecodedToken | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
    useEffect(() => {
-    const loggedInUser = localStorage.getItem('loggedInUser');
-    if (!loggedInUser) {
-        router.push('/');
-        return;
-    }
-    const parsedUser = JSON.parse(loggedInUser);
-    if(parsedUser.role !== 'manager') {
-        router.push('/');
-        return;
-    }
-    setUser(parsedUser);
-
-
     async function fetchData() {
       try {
         setLoading(true);
-        await seedDatabase();
-        const [ordersData, menuItemsData] = await Promise.all([
+        const [ordersData, menuItemsData, session] = await Promise.all([
           getOrders(),
           getMenuItems(),
+          getSession(),
         ]);
+        
+        if (!session) {
+            router.push('/login');
+            return;
+        }
+        setUser(session);
+
         setOrders(ordersData);
         setMenuItems(menuItemsData);
       } catch (error) {

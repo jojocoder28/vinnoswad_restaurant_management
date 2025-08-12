@@ -1,23 +1,24 @@
 
 "use client";
 
-import type { User } from '@/lib/types';
+import type { DecodedToken } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import Logo from './logo';
 import { Button } from './ui/button';
 import { LogOut } from 'lucide-react';
+import { logout } from '@/app/actions';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  user: User | null;
+  user: DecodedToken | null;
 }
 
 export default function DashboardLayout({ children, user }: DashboardLayoutProps) {
   const router = useRouter();
 
-  const handleLogout = () => {
-    localStorage.removeItem('loggedInUser');
-    router.push('/');
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
   };
 
   return (
@@ -31,7 +32,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
           <div className='flex items-center gap-4'>
             {user && (
                 <span className='text-muted-foreground hidden sm:inline'>
-                    Welcome, {user.name}
+                    Welcome, {user.name} ({user.role})
                 </span>
             )}
             <Button variant="outline" onClick={handleLogout}>

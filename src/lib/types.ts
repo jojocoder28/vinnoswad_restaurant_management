@@ -38,6 +38,16 @@ export interface Table {
 export interface User {
     id: string;
     name: string;
+    email: string;
     role: UserRole;
-    // In a real app, you'd have a password hash
+    password?: string; // Should be a hash, and optional on the client
+}
+
+export interface DecodedToken {
+  id: string;
+  name: string;
+  role: UserRole;
+  email: string;
+  iat: number;
+  exp: number;
 }

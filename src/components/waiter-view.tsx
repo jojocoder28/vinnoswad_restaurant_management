@@ -1,8 +1,8 @@
 
 "use client";
 
-import React, { useMemo, useState, useEffect } from 'react';
-import type { Order, MenuItem, Waiter, OrderStatus, Table, User } from '@/lib/types';
+import React, { useMemo, useState } from 'react';
+import type { Order, MenuItem, Waiter, OrderStatus, Table, DecodedToken } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import OrderCard from './order-card';
@@ -17,7 +17,7 @@ interface WaiterViewProps {
   tables: Table[];
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
   onCreateOrder: (order: Omit<Order, 'id' | 'timestamp' | 'status'>, tableId: string) => void;
-  currentUser: User;
+  currentUser: DecodedToken;
 }
 
 export default function WaiterView({ orders, menuItems, waiters, tables, onUpdateStatus, onCreateOrder, currentUser }: WaiterViewProps) {
@@ -40,7 +40,7 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
         }
       }
     });
-    return { activeOrders: active, servedOrders: served.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) };
+    return { activeOrders: active.sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()), servedOrders: served.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) };
   }, [orders, selectedWaiter]);
   
   const availableTables = useMemo(() => {
@@ -50,7 +50,16 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
 
 
   if (!selectedWaiter) {
-    return <div>Error: Waiter profile not found for the current user.</div>
+    return (
+      <div className="text-center py-10">
+        <Card className="max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle>Waiter Profile Not Found</CardTitle>
+            <CardDescription>We couldn't find a waiter profile linked to your user account. An administrator needs to create a waiter entry for your user: <span className="font-bold text-primary">{currentUser.email}</span></CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    )
   }
 
   return (

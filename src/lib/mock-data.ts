@@ -1,17 +1,22 @@
 import type { MenuItem, Order, Waiter, Table, User } from './types';
+import bcrypt from 'bcryptjs';
 
-export const initialUsers: User[] = [
-    { id: 'USER-001', name: 'Admin User', role: 'admin' },
-    { id: 'USER-002', name: 'Manager User', role: 'manager' },
-    { id: 'USER-003', name: 'Arjun', role: 'waiter' },
-    { id: 'USER-004', name: 'Priya', role: 'waiter' },
-    { id: 'USER-005', name: 'Rohan', role: 'waiter' },
+// Note: In a real app, you would never store plaintext passwords.
+// This is for demo purposes only. The registerUser function correctly hashes them.
+const passwordHash = bcrypt.hashSync('123456', 10);
+
+export const initialUsers: Omit<User, 'id'>[] = [
+    { name: 'Admin User', email: 'admin@eatery.com', role: 'admin', password: passwordHash },
+    { name: 'Manager User', email: 'manager@eatery.com', role: 'manager', password: passwordHash },
+    { name: 'Arjun Kumar', email: 'arjun@eatery.com', role: 'waiter', password: passwordHash },
+    { name: 'Priya Sharma', email: 'priya@eatery.com', role: 'waiter', password: passwordHash },
+    { name: 'Rohan Mehta', email: 'rohan@eatery.com', role: 'waiter', password: passwordHash },
 ];
 
-export const initialWaiters: Waiter[] = [
-  { id: 'WTR-001', name: 'Arjun', userId: 'USER-003' },
-  { id: 'WTR-002', name: 'Priya', userId: 'USER-004' },
-  { id: 'WTR-003', name: 'Rohan', userId: 'USER-005' },
+export const initialWaiters: Omit<Waiter, 'id' | 'userId'>[] = [
+  { name: 'Arjun Kumar' },
+  { name: 'Priya Sharma' },
+  { name: 'Rohan Mehta' },
 ];
 
 export const initialMenuItems: MenuItem[] = [
@@ -25,23 +30,12 @@ export const initialMenuItems: MenuItem[] = [
   { id: 'ITEM-008', name: 'Water', price: 1.00, category: 'Drink' },
 ];
 
-export const initialOrders: Order[] = [
-  {
-    id: 'ORD-004',
-    tableNumber: 3,
-    items: [
-      { menuItemId: 'ITEM-005', quantity: 1 },
-    ],
-    status: 'pending',
-    waiterId: 'WTR-003',
-    timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-  },
-];
+export const initialOrders: Order[] = [];
 
 export const initialTables: Table[] = [
   { id: 'TBL-001', tableNumber: 1, status: 'available', waiterId: null },
   { id: 'TBL-002', tableNumber: 2, status: 'available', waiterId: null },
-  { id: 'TBL-003', tableNumber: 3, status: 'occupied', waiterId: 'WTR-003' },
+  { id: 'TBL-003', tableNumber: 3, status: 'available', waiterId: null },
   { id: 'TBL-004', tableNumber: 4, status: 'available', waiterId: null },
   { id: 'TBL-005', tableNumber: 5, status: 'available', waiterId: null },
   { id: 'TBL-006', tableNumber: 6, status: 'available', waiterId: null },

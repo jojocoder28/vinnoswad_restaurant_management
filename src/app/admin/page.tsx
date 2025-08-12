@@ -2,50 +2,41 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Order, MenuItem, Waiter, User } from '@/lib/types';
-import {
-  getOrders,
-  getMenuItems,
-  getWaiters,
-  seedDatabase,
-} from '../actions';
-
+import type { Order, MenuItem, Waiter, DecodedToken } from '@/lib/types';
+import { getOrders, getMenuItems, getWaiters } from '../actions';
 import AdminView from '@/components/admin-view';
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/dashboard-layout';
+import { getSession } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 export default function AdminPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [waiters, setWaiters] = useState<Waiter[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<DecodedToken | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
-  useEffect(() => {
-    const loggedInUser = localStorage.getItem('loggedInUser');
-    if (!loggedInUser) {
-        router.push('/');
-        return;
-    }
-    const parsedUser = JSON.parse(loggedInUser);
-    if(parsedUser.role !== 'admin') {
-        router.push('/');
-        return;
-    }
-    setUser(parsedUser);
 
+  useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
-        await seedDatabase();
-        const [ordersData, menuItemsData, waitersData] = await Promise.all([
+        const [ordersData, menuItemsData, waitersData, session] = await Promise.all([
           getOrders(),
           getMenuItems(),
           getWaiters(),
+          getSession()
         ]);
+        
+        if (!session) {
+            router.push('/login');
+            return;
+        }
+        setUser(session);
+
         setOrders(ordersData);
         setMenuItems(menuItemsData);
         setWaiters(waitersData);
