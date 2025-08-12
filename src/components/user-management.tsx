@@ -95,7 +95,7 @@ export default function UserManagement({ users, orders, menuItems, waiters, onUp
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                         {user.role === 'waiter' && (
+                         {(user.role === 'waiter' || user.role === 'manager') && (
                           <>
                             <DropdownMenuItem onClick={() => handleViewProfile(user)}>
                               <UserIcon className="mr-2 h-4 w-4" /> View Profile
