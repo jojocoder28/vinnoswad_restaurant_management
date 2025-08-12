@@ -3,10 +3,11 @@
 import type { Order, MenuItem, OrderStatus } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ChefHat } from 'lucide-react';
+import { CheckCircle, ChefHat, Package, UtensilsCrossed } from 'lucide-react';
 import OrderCard from './order-card';
 import MenuManagement from './menu-management';
 import { useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 interface ManagerViewProps {
   orders: Order[];
@@ -16,6 +17,18 @@ interface ManagerViewProps {
   onUpdateMenuItem: (item: MenuItem) => void;
   onDeleteMenuItem: (id: string) => void;
 }
+
+const StatCard = ({ title, value, icon: Icon }: { title: string, value: number, icon: React.ElementType }) => (
+    <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+            <Icon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+            <div className="text-2xl font-bold">{value}</div>
+        </CardContent>
+    </Card>
+);
 
 export default function ManagerView({
   orders,
@@ -28,6 +41,26 @@ export default function ManagerView({
   
   const pendingOrders = useMemo(() => orders.filter(o => o.status === 'pending'), [orders]);
   const activeOrders = useMemo(() => orders.filter(o => o.status === 'approved' || o.status === 'ready'), [orders]);
+  
+  const { dailyItemsOrdered, dailyItemsServed } = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    let dailyItemsOrdered = 0;
+    let dailyItemsServed = 0;
+
+    orders.forEach(order => {
+      const orderDate = order.timestamp.split('T')[0];
+      if (orderDate === today) {
+        const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+        dailyItemsOrdered += itemCount;
+        if (order.status === 'served') {
+          dailyItemsServed += itemCount;
+        }
+      }
+    });
+
+    return { dailyItemsOrdered, dailyItemsServed };
+  }, [orders]);
+
 
   return (
     <Tabs defaultValue="orders" className="w-full">
@@ -36,6 +69,14 @@ export default function ManagerView({
         <TabsTrigger value="menu">Manage Menu</TabsTrigger>
       </TabsList>
       <TabsContent value="orders" className="mt-6 space-y-6">
+        <div>
+            <h3 className="text-xl font-headline font-semibold mb-4">Today's Live Stats</h3>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+               <StatCard title="Items Ordered Today" value={dailyItemsOrdered} icon={Package} />
+               <StatCard title="Items Served Today" value={dailyItemsServed} icon={UtensilsCrossed} />
+            </div>
+        </div>
+
         <div>
           <h3 className="text-xl font-headline font-semibold mb-4">Pending Approval</h3>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

@@ -1,9 +1,9 @@
 import type { MenuItem, Order, Waiter, Table } from './types';
 
 export const initialWaiters: Waiter[] = [
-  { id: 'WTR-001', name: 'Alex' },
-  { id: 'WTR-002', name: 'Maria' },
-  { id: 'WTR-003', name: 'John' },
+  { id: 'WTR-001', name: 'Arjun' },
+  { id: 'WTR-002', name: 'Priya' },
+  { id: 'WTR-003', name: 'Rohan' },
 ];
 
 export const initialMenuItems: MenuItem[] = [
@@ -24,7 +24,7 @@ export const initialOrders: Order[] = [
     items: [
       { menuItemId: 'ITEM-005', quantity: 1 },
     ],
-    status: 'pending', // Changed to pending to test the flow
+    status: 'pending',
     waiterId: 'WTR-003',
     timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
   },
