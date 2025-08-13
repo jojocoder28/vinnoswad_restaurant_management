@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Bill, Order, MenuItem, DecodedToken, RazorpayOrder } from '@/lib/types';
@@ -281,3 +282,5 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
         </Dialog>
     );
 }
+
+    
