@@ -4,12 +4,15 @@
 import type { Order, MenuItem, OrderStatus, Waiter } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ChefHat, Bell, Utensils, Package, Clock, ShieldAlert } from 'lucide-react';
+import { CheckCircle, ChefHat, Bell, Utensils, Package, Clock, ShieldAlert, XCircle } from 'lucide-react';
 import OrderCard from './order-card';
 import MenuManagement from './menu-management';
 import { useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
+import CancelOrderForm from './cancel-order-form';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
 
 
 interface ManagerViewProps {
@@ -17,6 +20,7 @@ interface ManagerViewProps {
   menuItems: MenuItem[];
   waiters: Waiter[];
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
+  onCancelOrder: (orderId: string, reason: string) => void;
   onAddMenuItem: (item: Omit<MenuItem, 'id'>) => void;
   onUpdateMenuItem: (item: MenuItem) => void;
   onDeleteMenuItem: (id: string) => void;
@@ -39,17 +43,20 @@ export default function ManagerView({
   menuItems,
   waiters,
   onUpdateStatus,
+  onCancelOrder,
   onAddMenuItem,
   onUpdateMenuItem,
   onDeleteMenuItem,
 }: ManagerViewProps) {
   
   const [confirmation, setConfirmation] = useState<{ orderId: string, status: OrderStatus, message: string } | null>(null);
+  const [cancellingOrder, setCancellingOrder] = useState<Order | null>(null);
 
   const pendingOrders = useMemo(() => orders.filter(o => o.status === 'pending'), [orders]);
   const approvedOrders = useMemo(() => orders.filter(o => o.status === 'approved'), [orders]);
   const preparedOrders = useMemo(() => orders.filter(o => o.status === 'prepared'), [orders]);
   const readyOrders = useMemo(() => orders.filter(o => o.status === 'ready'), [orders]);
+  const cancelledOrders = useMemo(() => orders.filter(o => o.status === 'cancelled'), [orders]);
 
   const getWaiterName = (waiterId: string) => waiters.find(w => w.id === waiterId)?.name || "Unknown";
   
@@ -79,14 +86,79 @@ export default function ManagerView({
     }
   };
 
+  const handleConfirmCancel = (reason: string) => {
+    if (cancellingOrder) {
+        onCancelOrder(cancellingOrder.id, reason);
+        setCancellingOrder(null);
+    }
+  };
+
+  const renderOrderActions = (order: Order) => {
+    switch (order.status) {
+        case 'pending':
+            return (
+                <div className='flex items-center gap-2 w-full'>
+                    <Button
+                      variant="outline"
+                      className="w-full bg-accent text-accent-foreground hover:bg-accent/90 border-accent"
+                      onClick={() => setConfirmation({ orderId: order.id, status: 'approved', message: `This will send the order for Table ${order.tableNumber} to the kitchen.` })}
+                    >
+                      <CheckCircle className="mr-2 h-4 w-4" /> Approve
+                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className='h-9 w-9'>
+                                <MoreHorizontal />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setCancellingOrder(order)} className="text-destructive focus:text-destructive">
+                                <XCircle className='mr-2' /> Cancel Order
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            );
+        case 'prepared':
+            return (
+                <Button className="w-full" onClick={() => setConfirmation({ orderId: order.id, status: 'ready', message: `This will notify ${getWaiterName(order.waiterId)} to pick up the order for Table ${order.tableNumber}.` })}>
+                    <Bell className="mr-2 h-4 w-4" /> Notify Waiter
+                </Button>
+            );
+        case 'approved':
+             return (
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className='w-full'>
+                            In Kitchen...
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setCancellingOrder(order)} className="text-destructive focus:text-destructive">
+                             <XCircle className='mr-2' /> Cancel Order
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+             );
+        case 'ready':
+             return (
+                <span className='text-sm text-muted-foreground'>Waiting for waiter...</span>
+             );
+        default:
+            return null;
+    }
+  }
+
 
   return (
     <>
     <Tabs defaultValue="orders" className="w-full">
-      <TabsList className="grid w-full grid-cols-2 md:w-fit">
+      <TabsList className="grid w-full grid-cols-3 md:w-fit">
         <TabsTrigger value="orders">Manage Orders</TabsTrigger>
         <TabsTrigger value="menu">Manage Menu</TabsTrigger>
+        <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
       </TabsList>
+
       <TabsContent value="orders" className="mt-6 space-y-8">
         <div>
             <h3 className="text-xl font-headline font-semibold mb-4">Today's Live Stats</h3>
@@ -108,15 +180,7 @@ export default function ManagerView({
                   order={order}
                   menuItems={menuItems}
                   waiterName={getWaiterName(order.waiterId)}
-                  actions={
-                    <Button
-                      variant="outline"
-                      className="w-full bg-accent text-accent-foreground hover:bg-accent/90 border-accent"
-                      onClick={() => setConfirmation({ orderId: order.id, status: 'approved', message: `This will send the order for Table ${order.tableNumber} to the kitchen.` })}
-                    >
-                      <CheckCircle className="mr-2 h-4 w-4" /> Approve for Kitchen
-                    </Button>
-                  }
+                  actions={renderOrderActions(order)}
                 />
               ))
             ) : (
@@ -140,11 +204,7 @@ export default function ManagerView({
                   order={order}
                   menuItems={menuItems}
                   waiterName={getWaiterName(order.waiterId)}
-                  actions={
-                     <Button className="w-full" onClick={() => setConfirmation({ orderId: order.id, status: 'ready', message: `This will notify ${getWaiterName(order.waiterId)} to pick up the order for Table ${order.tableNumber}.` })}>
-                        <Bell className="mr-2 h-4 w-4" /> Notify Waiter
-                      </Button>
-                  }
+                  actions={renderOrderActions(order)}
                 />
               ))
             ) : (
@@ -169,6 +229,7 @@ export default function ManagerView({
                   order={order}
                   menuItems={menuItems}
                   waiterName={getWaiterName(order.waiterId)}
+                  actions={renderOrderActions(order)}
                 />
               ))
             ) : (
@@ -192,6 +253,7 @@ export default function ManagerView({
                   order={order}
                   menuItems={menuItems}
                   waiterName={getWaiterName(order.waiterId)}
+                  actions={renderOrderActions(order)}
                 />
               ))
             ) : (
@@ -213,6 +275,30 @@ export default function ManagerView({
           onDeleteMenuItem={onDeleteMenuItem}
         />
       </TabsContent>
+       <TabsContent value="cancelled" className="mt-6">
+        <div>
+          <h3 className="text-xl font-headline font-semibold mb-4">Cancelled Orders</h3>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {cancelledOrders.length > 0 ? (
+              cancelledOrders.map(order => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  menuItems={menuItems}
+                  waiterName={getWaiterName(order.waiterId)}
+                />
+              ))
+            ) : (
+                <Card className="col-span-full border-dashed">
+                    <CardHeader className="text-center">
+                        <CardTitle>No Cancelled Orders</CardTitle>
+                        <CardDescription>There are no cancelled orders to display.</CardDescription>
+                    </CardHeader>
+                </Card>
+            )}
+          </div>
+        </div>
+      </TabsContent>
     </Tabs>
 
      <AlertDialog open={!!confirmation} onOpenChange={(open) => !open && setConfirmation(null)}>
@@ -229,6 +315,14 @@ export default function ManagerView({
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
+
+    {cancellingOrder && (
+        <CancelOrderForm
+            isOpen={!!cancellingOrder}
+            onClose={() => setCancellingOrder(null)}
+            onConfirm={handleConfirmCancel}
+        />
+    )}
     </>
   );
 }

@@ -1,5 +1,5 @@
 
-export type OrderStatus = 'pending' | 'approved' | 'prepared' | 'ready' | 'served';
+export type OrderStatus = 'pending' | 'approved' | 'prepared' | 'ready' | 'served' | 'cancelled';
 export type UserRole = 'admin' | 'manager' | 'waiter' | 'kitchen';
 export type UserStatus = 'pending' | 'approved';
 
@@ -22,6 +22,7 @@ export interface Order {
   status: OrderStatus;
   waiterId: string;
   timestamp: string;
+  cancellationReason?: string;
 }
 
 export interface Waiter {

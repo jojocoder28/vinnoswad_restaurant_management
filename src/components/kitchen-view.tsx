@@ -3,11 +3,12 @@
 
 import type { Order, MenuItem, OrderStatus, Waiter } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { ChefHat, ShieldAlert } from 'lucide-react';
+import { ChefHat, ShieldAlert, XCircle } from 'lucide-react';
 import OrderCard from './order-card';
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
+import CancelOrderForm from './cancel-order-form';
 
 
 interface KitchenViewProps {
@@ -15,6 +16,7 @@ interface KitchenViewProps {
   menuItems: MenuItem[];
   waiters: Waiter[];
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
+  onCancelOrder: (orderId: string, reason: string) => void;
 }
 
 export default function KitchenView({
@@ -22,9 +24,11 @@ export default function KitchenView({
   menuItems,
   waiters,
   onUpdateStatus,
+  onCancelOrder
 }: KitchenViewProps) {
 
   const [confirmation, setConfirmation] = useState<{ orderId: string, status: OrderStatus, message: string } | null>(null);
+  const [cancellingOrder, setCancellingOrder] = useState<Order | null>(null);
   
   const approvedOrders = useMemo(() => orders.filter(o => o.status === 'approved'), [orders]);
   
@@ -38,6 +42,13 @@ export default function KitchenView({
       setConfirmation(null);
     }
   };
+  
+  const handleConfirmCancel = (reason: string) => {
+    if (cancellingOrder) {
+      onCancelOrder(cancellingOrder.id, reason);
+      setCancellingOrder(null);
+    }
+  }
 
   return (
     <>
@@ -53,12 +64,21 @@ export default function KitchenView({
                   menuItems={menuItems}
                   waiterName={getWaiterName(order.waiterId)}
                   actions={
-                    <Button
-                      className="w-full"
-                      onClick={() => setConfirmation({ orderId: order.id, status: 'prepared', message: `This will mark the order for Table ${order.tableNumber} as prepared and ready for pickup.` })}
-                    >
-                      <ChefHat className="mr-2 h-4 w-4" /> Mark as Prepared
-                    </Button>
+                    <div className='w-full flex flex-col gap-2'>
+                        <Button
+                            className="w-full"
+                            onClick={() => setConfirmation({ orderId: order.id, status: 'prepared', message: `This will mark the order for Table ${order.tableNumber} as prepared and ready for pickup.` })}
+                        >
+                            <ChefHat className="mr-2 h-4 w-4" /> Mark as Prepared
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            className="w-full"
+                            onClick={() => setCancellingOrder(order)}
+                        >
+                            <XCircle className="mr-2 h-4 w-4" /> Cancel Order
+                        </Button>
+                    </div>
                   }
                 />
               ))
@@ -92,6 +112,14 @@ export default function KitchenView({
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
+
+    {cancellingOrder && (
+        <CancelOrderForm 
+            isOpen={!!cancellingOrder}
+            onClose={() => setCancellingOrder(null)}
+            onConfirm={handleConfirmCancel}
+        />
+    )}
     </>
   );
 }

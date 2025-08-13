@@ -10,7 +10,8 @@ import {
   addMenuItem,
   updateMenuItem,
   deleteMenuItem,
-  getWaiters
+  getWaiters,
+  cancelOrder
 } from '../actions';
 
 import ManagerView from '@/components/manager-view';
@@ -82,6 +83,25 @@ export default function ManagerPage() {
     }
   };
 
+  const handleCancelOrder = async (orderId: string, reason: string) => {
+    try {
+      await cancelOrder(orderId, reason);
+      const ordersData = await getOrders();
+      setOrders(ordersData);
+      toast({
+        title: "Order Cancelled",
+        description: `The order has been cancelled.`,
+        variant: "destructive"
+      });
+    } catch (error) {
+       toast({
+        title: "Error",
+        description: "Failed to cancel order.",
+        variant: "destructive",
+      });
+    }
+  }
+
   const handleAddMenuItem = async (itemData: Omit<MenuItem, 'id'>) => {
     try {
       const newItem = await addMenuItem(itemData);
@@ -152,6 +172,7 @@ export default function ManagerPage() {
             menuItems={menuItems}
             waiters={waiters}
             onUpdateStatus={handleUpdateOrderStatus}
+            onCancelOrder={handleCancelOrder}
             onAddMenuItem={handleAddMenuItem}
             onUpdateMenuItem={handleUpdateMenuItem}
             onDeleteMenuItem={handleDeleteMenuItem}

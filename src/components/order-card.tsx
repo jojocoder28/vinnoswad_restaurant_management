@@ -20,6 +20,7 @@ const statusStyles: Record<OrderStatus, string> = {
   prepared: 'bg-purple-500/20 text-purple-700 border-purple-500/30 hover:bg-purple-500/30',
   ready: 'bg-green-500/20 text-green-700 border-green-500/30 hover:bg-green-500/30',
   served: 'bg-gray-500/20 text-gray-700 border-gray-500/30 hover:bg-gray-500/30',
+  cancelled: 'bg-red-500/20 text-red-700 border-red-500/30 hover:bg-red-500/30',
 };
 
 export default function OrderCard({ order, menuItems, waiterName, actions }: OrderCardProps) {
@@ -43,6 +44,12 @@ export default function OrderCard({ order, menuItems, waiterName, actions }: Ord
       </CardHeader>
       <CardContent className="flex-grow space-y-2">
         <Separator />
+        {order.status === 'cancelled' && order.cancellationReason && (
+             <div className='text-sm text-destructive py-2'>
+                <p className="font-bold">Cancellation Reason:</p>
+                <p>{order.cancellationReason}</p>
+             </div>
+        )}
         <ScrollArea className="h-32 pr-4">
             <ul className="text-sm space-y-1 py-2">
             {order.items.map(item => {

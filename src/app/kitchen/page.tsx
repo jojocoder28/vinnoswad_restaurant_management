@@ -8,6 +8,7 @@ import {
   updateOrderStatus,
   getMenuItems,
   getWaiters,
+  cancelOrder,
 } from '../actions';
 
 import KitchenView from '@/components/kitchen-view';
@@ -79,6 +80,25 @@ export default function KitchenPage() {
     }
   };
 
+  const handleCancelOrder = async (orderId: string, reason: string) => {
+    try {
+      await cancelOrder(orderId, reason);
+      const ordersData = await getOrders();
+      setOrders(ordersData);
+      toast({
+        title: "Order Cancelled",
+        description: `The order has been cancelled.`,
+        variant: "destructive"
+      });
+    } catch (error) {
+       toast({
+        title: "Error",
+        description: "Failed to cancel order.",
+        variant: "destructive",
+      });
+    }
+  };
+
 
   if (loading || !user) {
     return (
@@ -98,6 +118,7 @@ export default function KitchenPage() {
             menuItems={menuItems}
             waiters={waiters}
             onUpdateStatus={handleUpdateOrderStatus}
+            onCancelOrder={handleCancelOrder}
           />
     </DashboardLayout>
   );

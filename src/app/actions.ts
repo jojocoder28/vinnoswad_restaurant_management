@@ -195,6 +195,29 @@ export async function updateTableStatus(tableId: string, status: 'available' | '
     revalidatePath('/waiter');
 }
 
+// A helper function to check if a table should be marked as available
+async function freeUpTableIfNeeded(tableNumber: number, waiterId: string) {
+    const ordersCollection = await getCollection<Order>('orders');
+    const tablesCollection = await getCollection<Table>('tables');
+    
+    const table = await tablesCollection.findOne({ tableNumber });
+    if (table) {
+        // Check if there are any other active orders for this table by the same waiter
+        const otherOrdersCount = await ordersCollection.countDocuments({
+            tableNumber: table.tableNumber,
+            waiterId: waiterId,
+            status: { $nin: ['served', 'cancelled'] },
+        });
+
+        if (otherOrdersCount === 0) {
+           await tablesCollection.updateOne(
+               { _id: table._id },
+               { $set: { status: 'available', waiterId: null }}
+           );
+        }
+    }
+}
+
 
 // Order Actions
 export async function getOrders(): Promise<Order[]> {
@@ -224,33 +247,33 @@ export async function createOrder(orderData: Omit<Order, 'id' | 'timestamp' | 's
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<void> {
     const ordersCollection = await getCollection<Order>('orders');
-    const tablesCollection = await getCollection<Table>('tables');
-
+    
     await ordersCollection.updateOne(
         { _id: new ObjectId(orderId) },
         { $set: { status } }
     );
     
-    if (status === 'served') {
-        const order = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
-        if (order) {
-            const table = await tablesCollection.findOne({ tableNumber: order.tableNumber });
-            if (table) {
-                // Check if there are other non-served orders for this table by the same waiter
-                const otherOrders = await ordersCollection.countDocuments({
-                    tableNumber: table.tableNumber,
-                    waiterId: order.waiterId,
-                    status: { $nin: ['served'] },
-                });
+    const order = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
+    if (order && status === 'served') {
+       await freeUpTableIfNeeded(order.tableNumber, order.waiterId);
+    }
 
-                if (otherOrders === 0) {
-                   await tablesCollection.updateOne(
-                       { _id: table._id },
-                       { $set: { status: 'available', waiterId: null }}
-                   );
-                }
-            }
-        }
+    revalidatePath('/waiter');
+    revalidatePath('/manager');
+    revalidatePath('/kitchen');
+}
+
+export async function cancelOrder(orderId: string, reason: string): Promise<void> {
+    const ordersCollection = await getCollection<Order>('orders');
+    
+    await ordersCollection.updateOne(
+        { _id: new ObjectId(orderId) },
+        { $set: { status: 'cancelled', cancellationReason: reason } }
+    );
+    
+    const order = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
+    if (order) {
+       await freeUpTableIfNeeded(order.tableNumber, order.waiterId);
     }
 
     revalidatePath('/waiter');
