@@ -5,7 +5,6 @@ import type { Order, MenuItem, Waiter, User, UserStatus, DecodedToken, Table, Su
 import StatsCards from './stats-cards';
 import RevenueCharts from './revenue-charts';
 import { useMemo } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserManagement from './user-management';
 import LiveStatusDashboard from './live-status-dashboard';
 import ServedOrdersList from './served-orders-list';
@@ -14,6 +13,7 @@ import ReportGenerator from './report-generator';
 import MenuManagement from './menu-management';
 import SupplyChainManagement from './supply-chain-management';
 import ProfitLossAnalysis from './profit-loss-analysis';
+import DashboardNav from './dashboard-nav';
 
 interface AdminViewProps {
   orders: Order[];
@@ -81,20 +81,12 @@ export default function AdminView({
   const totalOrders = useMemo(() => orders.length, [orders]);
   const totalMenuItems = useMemo(() => menuItems.length, [menuItems]);
 
-  return (
-    <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 md:grid-cols-8">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="status">Restaurant Status</TabsTrigger>
-            <TabsTrigger value="menu">Menu</TabsTrigger>
-            <TabsTrigger value="inventory">Inventory</TabsTrigger>
-            <TabsTrigger value="pnl">P&L Analysis</TabsTrigger>
-            <TabsTrigger value="history">Order History</TabsTrigger>
-            <TabsTrigger value="users">Staff & Users</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="dashboard" className="mt-6 space-y-8">
+  const navItems = [
+    {
+      value: "dashboard",
+      label: "Dashboard",
+      content: (
+        <div className="space-y-8">
             <StatsCards 
                 totalRevenue={totalRevenue} 
                 totalOrders={totalOrders} 
@@ -103,18 +95,18 @@ export default function AdminView({
                 totalMenuItems={totalMenuItems}
             />
             <RevenueCharts orders={servedOrders} menuItems={menuItems} waiters={waiters} tables={tables} />
-        </TabsContent>
-        
-        <TabsContent value="status" className="mt-6">
-            <LiveStatusDashboard
-                orders={orders}
-                menuItems={menuItems}
-                waiters={waiters}
-                tables={tables}
-            />
-        </TabsContent>
-
-        <TabsContent value="menu" className="mt-6">
+        </div>
+      )
+    },
+    {
+        value: "status",
+        label: "Restaurant Status",
+        content: <LiveStatusDashboard orders={orders} menuItems={menuItems} waiters={waiters} tables={tables} />
+    },
+    {
+        value: "menu",
+        label: "Menu",
+        content: (
             <MenuManagement
                 menuItems={menuItems}
                 onAddMenuItem={onAddMenuItem}
@@ -122,9 +114,12 @@ export default function AdminView({
                 onDeleteMenuItem={onDeleteMenuItem}
                 currentUserRole={currentUser.role}
             />
-        </TabsContent>
-
-        <TabsContent value="inventory" className="mt-6">
+        )
+    },
+    {
+        value: "inventory",
+        label: "Inventory",
+        content: (
             <SupplyChainManagement 
                 suppliers={suppliers}
                 stockItems={stockItems}
@@ -140,24 +135,33 @@ export default function AdminView({
                 onReceivePurchaseOrder={onReceivePurchaseOrder}
                 onUpdateMenuItem={onUpdateMenuItem}
             />
-        </TabsContent>
-
-        <TabsContent value="pnl" className="mt-6">
-            <ProfitLossAnalysis menuItems={menuItems} orders={servedOrders} />
-        </TabsContent>
-
-         <TabsContent value="history" className="mt-6 space-y-8">
-            <ServedOrdersList 
-                orders={servedOrders}
-                waiters={waiters}
-            />
-            <CancelledOrdersList
-                orders={cancelledOrders}
-                waiters={waiters}
-            />
-        </TabsContent>
-
-        <TabsContent value="users" className="mt-6">
+        )
+    },
+    {
+        value: "pnl",
+        label: "P&L Analysis",
+        content: <ProfitLossAnalysis menuItems={menuItems} orders={servedOrders} />
+    },
+    {
+        value: "history",
+        label: "Order History",
+        content: (
+            <div className="space-y-8">
+                <ServedOrdersList 
+                    orders={servedOrders}
+                    waiters={waiters}
+                />
+                <CancelledOrdersList
+                    orders={cancelledOrders}
+                    waiters={waiters}
+                />
+            </div>
+        )
+    },
+    {
+        value: "users",
+        label: "Staff & Users",
+        content: (
             <UserManagement 
                 users={users}
                 orders={orders}
@@ -168,11 +172,14 @@ export default function AdminView({
                 onCreateUser={onCreateUser}
                 currentUser={currentUser}
              />
-        </TabsContent>
+        )
+    },
+    {
+        value: "reports",
+        label: "Reports",
+        content: <ReportGenerator />
+    }
+  ];
 
-        <TabsContent value="reports" className="mt-6">
-            <ReportGenerator />
-        </TabsContent>
-    </Tabs>
-  );
+  return <DashboardNav items={navItems} />;
 }

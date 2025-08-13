@@ -2,7 +2,6 @@
 "use client";
 
 import type { Order, MenuItem, OrderStatus, Waiter, Bill, DecodedToken, Table } from '@/lib/types';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, ChefHat, Utensils, Package, Clock, ShieldAlert, XCircle, FileText, Printer } from 'lucide-react';
 import OrderCard from './order-card';
@@ -15,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal } from 'lucide-react';
 import BillingModal from './billing-modal';
 import { Separator } from './ui/separator';
+import DashboardNav from './dashboard-nav';
 
 interface ManagerViewProps {
   orders: Order[];
@@ -201,229 +201,247 @@ export default function ManagerView({
     }
   }
 
+  const navItems = [
+    {
+        value: "orders",
+        label: "Manage Orders",
+        content: (
+            <div className="space-y-8">
+                <div>
+                    <h3 className="text-xl font-headline font-semibold mb-4">Today's Live Stats</h3>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+                    <StatCard title="Items Ordered Today" value={dailyItemsOrdered} icon={Package} />
+                    <StatCard title="Items Served Today" value={dailyItemsServed} icon={Utensils} />
+                    <StatCard title="Orders Pending" value={pendingOrders.length} icon={Clock} />
+                    <StatCard title="Orders in Kitchen" value={approvedOrders.length} icon={ChefHat} />
+                    </div>
+                </div>
+
+                <div>
+                <h3 className="text-xl font-headline font-semibold mb-4">Pending Approval</h3>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {pendingOrders.length > 0 ? (
+                    pendingOrders.map(order => (
+                        <OrderCard
+                        key={order.id}
+                        order={order}
+                        menuItems={menuItems}
+                        waiterName={getWaiterName(order.waiterId)}
+                        actions={renderOrderActions(order)}
+                        />
+                    ))
+                    ) : (
+                        <Card className="col-span-full border-dashed">
+                            <CardHeader className="text-center">
+                                <CardTitle>No Pending Orders</CardTitle>
+                                <CardDescription>There are no orders waiting for approval.</CardDescription>
+                            </CardHeader>
+                        </Card>
+                    )}
+                </div>
+                </div>
+
+                <div>
+                <h3 className="text-xl font-headline font-semibold mb-4">In the Kitchen</h3>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {approvedOrders.length > 0 ? (
+                    approvedOrders.map(order => (
+                        <OrderCard
+                        key={order.id}
+                        order={order}
+                        menuItems={menuItems}
+                        waiterName={getWaiterName(order.waiterId)}
+                        actions={renderOrderActions(order)}
+                        />
+                    ))
+                    ) : (
+                        <Card className="col-span-full border-dashed">
+                            <CardHeader className="text-center">
+                                <CardTitle>Kitchen is Clear</CardTitle>
+                                <CardDescription>No orders are currently in the kitchen.</CardDescription>
+                            </CardHeader>
+                        </Card>
+                    )}
+                </div>
+                </div>
+                
+                <div>
+                <h3 className="text-xl font-headline font-semibold mb-4">Ready to Serve</h3>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {preparedOrders.length > 0 ? (
+                    preparedOrders.map(order => (
+                        <OrderCard
+                        key={order.id}
+                        order={order}
+                        menuItems={menuItems}
+                        waiterName={getWaiterName(order.waiterId)}
+                        actions={renderOrderActions(order)}
+                        />
+                    ))
+                    ) : (
+                        <Card className="col-span-full border-dashed">
+                            <CardHeader className="text-center">
+                                <CardTitle>No Orders Ready</CardTitle>
+                                <CardDescription>No orders are currently waiting to be served.</CardDescription>
+                            </CardHeader>
+                        </Card>
+                    )}
+                </div>
+                </div>
+            </div>
+        )
+    },
+    {
+        value: "menu",
+        label: "Manage Menu",
+        content: (
+            <MenuManagement
+                menuItems={menuItems}
+                onAddMenuItem={onAddMenuItem}
+                onUpdateMenuItem={onUpdateMenuItem}
+                onDeleteMenuItem={onDeleteMenuItem}
+                currentUserRole='manager'
+            />
+        )
+    },
+    {
+        value: "billing",
+        label: "Billing",
+        content: (
+            <div className="space-y-8">
+                <div>
+                <h3 className="text-xl font-headline font-semibold mb-4">Unpaid Bills</h3>
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {unpaidBills.length > 0 ? (
+                        unpaidBills.map(bill => (
+                            <Card key={bill.id} className="bg-amber-500/10 border-amber-500/20">
+                                <CardHeader>
+                                    <CardTitle>Table {bill.tableNumber}</CardTitle>
+                                    <CardDescription>Unpaid Bill Total: <span className="font-bold font-mono">₹{bill.total.toFixed(2)}</span></CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Button className="w-full" variant="outline" onClick={() => handleViewBill(bill)}>
+                                        <FileText className="mr-2 h-4 w-4"/> View Bill
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : (
+                            <div className="col-span-full text-center text-muted-foreground py-10">
+                            <Card className="border-dashed">
+                                <CardHeader>
+                                    <CardTitle>No Unpaid Bills</CardTitle>
+                                    <CardDescription>
+                                    All generated bills have been paid.
+                                    </CardDescription>
+                                </CardHeader>
+                            </Card>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <Separator />
+            
+            <div>
+                <h3 className="text-xl font-headline font-semibold mb-4">Tables Ready to Bill</h3>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {tablesToBill.length > 0 ? (
+                        tablesToBill.map(tableNum => (
+                            <Card key={tableNum}>
+                                <CardHeader>
+                                    <CardTitle>Table {tableNum}</CardTitle>
+                                    <CardDescription>This table has served orders ready for billing.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Button className="w-full" onClick={() => handleGenerateBill(tableNum)}>
+                                        <FileText className="mr-2 h-4 w-4"/> Generate Bill & QR Code
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : (
+                        <div className="col-span-full text-center text-muted-foreground py-10">
+                            <Card className="border-dashed">
+                                <CardHeader>
+                                    <CardTitle>No Tables to Bill</CardTitle>
+                                    <CardDescription>
+                                    There are no tables with served orders waiting to be billed.
+                                    </CardDescription>
+                                </CardHeader>
+                            </Card>
+                        </div>
+                    )}
+                </div>
+            </div>
+          </div>
+        )
+    },
+    {
+        value: "served",
+        label: "Served History",
+        content: (
+            <div>
+                <h3 className="text-xl font-headline font-semibold mb-4">Served & Billed Orders</h3>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {servedOrders.length > 0 ? (
+                    servedOrders.map(order => (
+                        <OrderCard
+                        key={order.id}
+                        order={order}
+                        menuItems={menuItems}
+                        waiterName={getWaiterName(order.waiterId)}
+                        actions={renderOrderActions(order)}
+                        />
+                    ))
+                    ) : (
+                        <Card className="col-span-full border-dashed">
+                            <CardHeader className="text-center">
+                                <CardTitle>No Served Orders</CardTitle>
+                                <CardDescription>There are no completed orders to display.</CardDescription>
+                            </CardHeader>
+                        </Card>
+                    )}
+                </div>
+            </div>
+        )
+    },
+    {
+        value: "cancelled",
+        label: "Cancelled",
+        content: (
+            <div>
+                <h3 className="text-xl font-headline font-semibold mb-4">Cancelled Orders</h3>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {cancelledOrders.length > 0 ? (
+                    cancelledOrders.map(order => (
+                        <OrderCard
+                        key={order.id}
+                        order={order}
+                        menuItems={menuItems}
+                        waiterName={getWaiterName(order.waiterId)}
+                        />
+                    ))
+                    ) : (
+                        <Card className="col-span-full border-dashed">
+                            <CardHeader className="text-center">
+                                <CardTitle>No Cancelled Orders</CardTitle>
+                                <CardDescription>There are no cancelled orders to display.</CardDescription>
+                            </CardHeader>
+                        </Card>
+                    )}
+                </div>
+            </div>
+        )
+    }
+  ];
+
 
   return (
     <>
-    <Tabs defaultValue="orders" className="w-full">
-      <TabsList>
-        <TabsTrigger value="orders">Manage Orders</TabsTrigger>
-        <TabsTrigger value="menu">Manage Menu</TabsTrigger>
-        <TabsTrigger value="billing">Billing</TabsTrigger>
-        <TabsTrigger value="served">Served History</TabsTrigger>
-        <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-      </TabsList>
+      <DashboardNav items={navItems} />
 
-      <TabsContent value="orders" className="mt-6 space-y-8">
-        <div>
-            <h3 className="text-xl font-headline font-semibold mb-4">Today's Live Stats</h3>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-               <StatCard title="Items Ordered Today" value={dailyItemsOrdered} icon={Package} />
-               <StatCard title="Items Served Today" value={dailyItemsServed} icon={Utensils} />
-               <StatCard title="Orders Pending" value={pendingOrders.length} icon={Clock} />
-               <StatCard title="Orders in Kitchen" value={approvedOrders.length} icon={ChefHat} />
-            </div>
-        </div>
-
-        <div>
-          <h3 className="text-xl font-headline font-semibold mb-4">Pending Approval</h3>
-           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {pendingOrders.length > 0 ? (
-              pendingOrders.map(order => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  menuItems={menuItems}
-                  waiterName={getWaiterName(order.waiterId)}
-                  actions={renderOrderActions(order)}
-                />
-              ))
-            ) : (
-                <Card className="col-span-full border-dashed">
-                    <CardHeader className="text-center">
-                        <CardTitle>No Pending Orders</CardTitle>
-                        <CardDescription>There are no orders waiting for approval.</CardDescription>
-                    </CardHeader>
-                </Card>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-xl font-headline font-semibold mb-4">In the Kitchen</h3>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {approvedOrders.length > 0 ? (
-              approvedOrders.map(order => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  menuItems={menuItems}
-                  waiterName={getWaiterName(order.waiterId)}
-                  actions={renderOrderActions(order)}
-                />
-              ))
-            ) : (
-                <Card className="col-span-full border-dashed">
-                    <CardHeader className="text-center">
-                        <CardTitle>Kitchen is Clear</CardTitle>
-                        <CardDescription>No orders are currently in the kitchen.</CardDescription>
-                    </CardHeader>
-                </Card>
-            )}
-          </div>
-        </div>
-        
-        <div>
-          <h3 className="text-xl font-headline font-semibold mb-4">Ready to Serve</h3>
-           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {preparedOrders.length > 0 ? (
-              preparedOrders.map(order => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  menuItems={menuItems}
-                  waiterName={getWaiterName(order.waiterId)}
-                  actions={renderOrderActions(order)}
-                />
-              ))
-            ) : (
-                <Card className="col-span-full border-dashed">
-                    <CardHeader className="text-center">
-                        <CardTitle>No Orders Ready</CardTitle>
-                        <CardDescription>No orders are currently waiting to be served.</CardDescription>
-                    </CardHeader>
-                </Card>
-            )}
-          </div>
-        </div>
-      </TabsContent>
-      <TabsContent value="menu" className="mt-6">
-        <MenuManagement
-          menuItems={menuItems}
-          onAddMenuItem={onAddMenuItem}
-          onUpdateMenuItem={onUpdateMenuItem}
-          onDeleteMenuItem={onDeleteMenuItem}
-          currentUserRole='manager'
-        />
-      </TabsContent>
-      <TabsContent value="billing" className="mt-4 space-y-8">
-            <div>
-              <h3 className="text-xl font-headline font-semibold mb-4">Unpaid Bills</h3>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {unpaidBills.length > 0 ? (
-                      unpaidBills.map(bill => (
-                          <Card key={bill.id} className="bg-amber-500/10 border-amber-500/20">
-                              <CardHeader>
-                                  <CardTitle>Table {bill.tableNumber}</CardTitle>
-                                  <CardDescription>Unpaid Bill Total: <span className="font-bold font-mono">₹{bill.total.toFixed(2)}</span></CardDescription>
-                              </CardHeader>
-                              <CardContent>
-                                  <Button className="w-full" variant="outline" onClick={() => handleViewBill(bill)}>
-                                      <FileText className="mr-2 h-4 w-4"/> View Bill
-                                  </Button>
-                              </CardContent>
-                          </Card>
-                      ))
-                  ) : (
-                        <div className="col-span-full text-center text-muted-foreground py-10">
-                          <Card className="border-dashed">
-                              <CardHeader>
-                                  <CardTitle>No Unpaid Bills</CardTitle>
-                                  <CardDescription>
-                                  All generated bills have been paid.
-                                  </CardDescription>
-                              </CardHeader>
-                          </Card>
-                      </div>
-                  )}
-              </div>
-          </div>
-
-          <Separator />
-          
-          <div>
-              <h3 className="text-xl font-headline font-semibold mb-4">Tables Ready to Bill</h3>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {tablesToBill.length > 0 ? (
-                      tablesToBill.map(tableNum => (
-                          <Card key={tableNum}>
-                              <CardHeader>
-                                  <CardTitle>Table {tableNum}</CardTitle>
-                                  <CardDescription>This table has served orders ready for billing.</CardDescription>
-                              </CardHeader>
-                              <CardContent>
-                                  <Button className="w-full" onClick={() => handleGenerateBill(tableNum)}>
-                                      <FileText className="mr-2 h-4 w-4"/> Generate Bill & QR Code
-                                  </Button>
-                              </CardContent>
-                          </Card>
-                      ))
-                  ) : (
-                      <div className="col-span-full text-center text-muted-foreground py-10">
-                          <Card className="border-dashed">
-                              <CardHeader>
-                                  <CardTitle>No Tables to Bill</CardTitle>
-                                  <CardDescription>
-                                  There are no tables with served orders waiting to be billed.
-                                  </CardDescription>
-                              </CardHeader>
-                          </Card>
-                      </div>
-                  )}
-              </div>
-          </div>
-      </TabsContent>
-      <TabsContent value="served" className="mt-6">
-        <div>
-          <h3 className="text-xl font-headline font-semibold mb-4">Served & Billed Orders</h3>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {servedOrders.length > 0 ? (
-              servedOrders.map(order => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  menuItems={menuItems}
-                  waiterName={getWaiterName(order.waiterId)}
-                  actions={renderOrderActions(order)}
-                />
-              ))
-            ) : (
-                <Card className="col-span-full border-dashed">
-                    <CardHeader className="text-center">
-                        <CardTitle>No Served Orders</CardTitle>
-                        <CardDescription>There are no completed orders to display.</CardDescription>
-                    </CardHeader>
-                </Card>
-            )}
-          </div>
-        </div>
-      </TabsContent>
-       <TabsContent value="cancelled" className="mt-6">
-        <div>
-          <h3 className="text-xl font-headline font-semibold mb-4">Cancelled Orders</h3>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {cancelledOrders.length > 0 ? (
-              cancelledOrders.map(order => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  menuItems={menuItems}
-                  waiterName={getWaiterName(order.waiterId)}
-                />
-              ))
-            ) : (
-                <Card className="col-span-full border-dashed">
-                    <CardHeader className="text-center">
-                        <CardTitle>No Cancelled Orders</CardTitle>
-                        <CardDescription>There are no cancelled orders to display.</CardDescription>
-                    </CardHeader>
-                </Card>
-            )}
-          </div>
-        </div>
-      </TabsContent>
-    </Tabs>
-
-     <AlertDialog open={!!confirmation} onOpenChange={(open) => !open && setConfirmation(null)}>
+      <AlertDialog open={!!confirmation} onOpenChange={(open) => !open && setConfirmation(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2"><ShieldAlert className="text-destructive"/>Are you sure?</AlertDialogTitle>
@@ -436,27 +454,27 @@ export default function ManagerView({
                 <AlertDialogAction onClick={handleConfirm}>Confirm</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
-    </AlertDialog>
+      </AlertDialog>
 
-    {cancellingOrder && (
-        <CancelOrderForm
-            isOpen={!!cancellingOrder}
-            onClose={() => setCancellingOrder(null)}
-            onConfirm={handleConfirmCancel}
-        />
-    )}
+      {cancellingOrder && (
+          <CancelOrderForm
+              isOpen={!!cancellingOrder}
+              onClose={() => setCancellingOrder(null)}
+              onConfirm={handleConfirmCancel}
+          />
+      )}
 
-    {activeBill && (
-        <BillingModal
-            isOpen={!!activeBill}
-            onClose={() => setActiveBill(null)}
-            bill={activeBill}
-            onPayBill={onPayBill}
-            orders={orders.filter(o => activeBill?.orderIds.includes(o.id))}
-            menuItems={menuItems}
-            currentUser={currentUser}
-        />
-    )}
+      {activeBill && (
+          <BillingModal
+              isOpen={!!activeBill}
+              onClose={() => setActiveBill(null)}
+              bill={activeBill}
+              onPayBill={onPayBill}
+              orders={orders.filter(o => activeBill?.orderIds.includes(o.id))}
+              menuItems={menuItems}
+              currentUser={currentUser}
+          />
+      )}
     </>
   );
 }

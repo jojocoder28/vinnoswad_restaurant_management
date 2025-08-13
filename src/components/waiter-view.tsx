@@ -8,11 +8,11 @@ import { PlusCircle, Utensils, ShieldAlert, FileText, Check, MoreHorizontal, Fil
 import OrderCard from './order-card';
 import OrderForm from './order-form';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import BillingModal from './billing-modal';
 import { Separator } from './ui/separator';
+import DashboardNav from './dashboard-nav';
 
 
 interface WaiterViewProps {
@@ -192,51 +192,42 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
     )
   }
 
-  return (
-    <>
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <p>You are logged in as <span className="font-semibold">{selectedWaiter.name}</span>.</p>
-        <Button onClick={handleCreateNewOrder} disabled={!selectedWaiter.id || availableTablesForNewOrder.length === 0}>
-          <PlusCircle className="mr-2 h-4 w-4" /> New Order
-        </Button>
-      </div>
-
-       <Tabs defaultValue="active" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="active">Active Orders</TabsTrigger>
-              <TabsTrigger value="billing">Billing</TabsTrigger>
-              <TabsTrigger value="history">Order History</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="active" className="mt-4">
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {activeOrders.length > 0 ? (
-                    activeOrders.map(order => (
-                        <OrderCard
-                        key={order.id}
-                        order={order}
-                        menuItems={menuItems}
-                        waiterName={selectedWaiter?.name || 'Unknown'}
-                        actions={renderOrderActions(order)}
-                        />
-                    ))
-                    ) : (
-                    <div className="col-span-full text-center text-muted-foreground py-10">
-                        <Card className="border-dashed">
-                            <CardHeader>
-                                <CardTitle>No Active Orders</CardTitle>
-                                <CardDescription>
-                                You have no active orders. Create a new one to get started.
-                                </CardDescription>
-                            </CardHeader>
-                        </Card>
-                    </div>
-                    )}
+  const navItems = [
+    {
+        value: "active",
+        label: "Active Orders",
+        content: (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {activeOrders.length > 0 ? (
+                activeOrders.map(order => (
+                    <OrderCard
+                    key={order.id}
+                    order={order}
+                    menuItems={menuItems}
+                    waiterName={selectedWaiter?.name || 'Unknown'}
+                    actions={renderOrderActions(order)}
+                    />
+                ))
+                ) : (
+                <div className="col-span-full text-center text-muted-foreground py-10">
+                    <Card className="border-dashed">
+                        <CardHeader>
+                            <CardTitle>No Active Orders</CardTitle>
+                            <CardDescription>
+                            You have no active orders. Create a new one to get started.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
                 </div>
-            </TabsContent>
-
-            <TabsContent value="billing" className="mt-4 space-y-8">
+                )}
+            </div>
+        )
+    },
+    {
+        value: "billing",
+        label: "Billing",
+        content: (
+            <div className="space-y-8">
                  <div>
                     <h3 className="text-xl font-headline font-semibold mb-4">Unpaid Bills</h3>
                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -302,35 +293,51 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
                         )}
                     </div>
                 </div>
-            </TabsContent>
-            
-            <TabsContent value="history" className="mt-4">
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {orderHistory.length > 0 ? (
-                    orderHistory.map(order => (
-                        <OrderCard
-                            key={order.id}
-                            order={order}
-                            menuItems={menuItems}
-                            waiterName={selectedWaiter?.name || 'Unknown'}
-                            actions={renderOrderActions(order, true)}
-                        />
-                    ))
-                    ) : (
-                     <div className="col-span-full text-center text-muted-foreground py-10">
-                        <Card className="border-dashed">
-                            <CardHeader>
-                                <CardTitle>No Order History</CardTitle>
-                                <CardDescription>
-                                You have no past orders to display yet.
-                                </CardDescription>
-                            </CardHeader>
-                        </Card>
-                    </div>
-                    )}
+            </div>
+        )
+    },
+    {
+        value: "history",
+        label: "Order History",
+        content: (
+             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {orderHistory.length > 0 ? (
+                orderHistory.map(order => (
+                    <OrderCard
+                        key={order.id}
+                        order={order}
+                        menuItems={menuItems}
+                        waiterName={selectedWaiter?.name || 'Unknown'}
+                        actions={renderOrderActions(order, true)}
+                    />
+                ))
+                ) : (
+                    <div className="col-span-full text-center text-muted-foreground py-10">
+                    <Card className="border-dashed">
+                        <CardHeader>
+                            <CardTitle>No Order History</CardTitle>
+                            <CardDescription>
+                            You have no past orders to display yet.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
                 </div>
-            </TabsContent>
-      </Tabs>
+                )}
+            </div>
+        )
+    }
+  ];
+
+  return (
+    <>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p>You are logged in as <span className="font-semibold">{selectedWaiter.name}</span>.</p>
+        <Button onClick={handleCreateNewOrder} disabled={!selectedWaiter.id || availableTablesForNewOrder.length === 0}>
+          <PlusCircle className="mr-2 h-4 w-4" /> New Order
+        </Button>
+      </div>
+      <DashboardNav items={navItems} />
 
       <OrderForm
         isOpen={isOrderFormOpen}
