@@ -620,12 +620,19 @@ export async function updatePurchaseOrderStatus(id: string, status: PurchaseStat
 
 // Payment Gateway Actions
 
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID!,
-    key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
-
 export async function createRazorpayOrder(amount: number, receiptId: string): Promise<RazorpayOrder> {
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+    if (!keyId || !keySecret) {
+        throw new Error("Razorpay API keys are not configured on the server.");
+    }
+    
+    const razorpay = new Razorpay({
+        key_id: keyId,
+        key_secret: keySecret,
+    });
+    
     const options = {
         amount: amount * 100, // Amount in the smallest currency unit (paise)
         currency: "INR",
@@ -648,8 +655,13 @@ export async function verifyRazorpayPayment(data: {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = data;
     const body = razorpay_order_id + "|" + razorpay_payment_id;
 
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+     if (!keySecret) {
+        throw new Error("Razorpay secret key is not configured for verification.");
+    }
+
     const expectedSignature = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+        .createHmac('sha256', keySecret)
         .update(body.toString())
         .digest('hex');
 
@@ -658,6 +670,13 @@ export async function verifyRazorpayPayment(data: {
     if (!isAuthentic) {
         throw new Error("Invalid payment signature.");
     }
+    
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    if (!keyId) {
+        throw new Error("Razorpay key ID is not configured for fetching order.");
+    }
+
+    const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
     
     // The payment is authentic. Now, fetch the order from the database
     // using the receiptId which we stored as the razorpay_order_id's `receipt`.
