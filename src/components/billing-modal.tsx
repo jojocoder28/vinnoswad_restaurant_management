@@ -20,7 +20,7 @@ interface BillingModalProps {
 
 export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders, menuItems }: BillingModalProps) {
     const qrCodeRef = useRef<HTMLCanvasElement>(null);
-    const YOUR_UPI_ID = "your-upi-id@okhdfcbank"; // Replace with your actual UPI ID
+    const YOUR_UPI_ID = "dasjojo7-1@okicici";
 
     useEffect(() => {
         if (isOpen && qrCodeRef.current) {
@@ -91,4 +91,3 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
         </Dialog>
     );
 }
-
