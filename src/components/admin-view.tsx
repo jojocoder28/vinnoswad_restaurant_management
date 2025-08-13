@@ -30,6 +30,7 @@ export default function AdminView({
     currentUser 
 }: AdminViewProps) {
   const servedOrders = useMemo(() => orders.filter(o => o.status === 'served'), [orders]);
+  const cancelledOrders = useMemo(() => orders.filter(o => o.status === 'cancelled'), [orders]);
 
   const totalRevenue = useMemo(() => {
     return servedOrders.reduce((total, order) => {
@@ -56,6 +57,7 @@ export default function AdminView({
                 totalRevenue={totalRevenue} 
                 totalOrders={totalOrders} 
                 servedOrders={servedOrders.length}
+                cancelledOrders={cancelledOrders.length}
                 totalMenuItems={totalMenuItems}
             />
             <RevenueCharts orders={servedOrders} menuItems={menuItems} waiters={waiters} />

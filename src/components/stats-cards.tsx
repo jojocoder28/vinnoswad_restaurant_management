@@ -2,16 +2,17 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { IndianRupee, ClipboardList, Utensils, CheckSquare } from 'lucide-react';
+import { IndianRupee, ClipboardList, Utensils, CheckSquare, XCircle } from 'lucide-react';
 
 interface StatsCardsProps {
   totalRevenue: number;
   totalOrders: number;
   servedOrders: number;
+  cancelledOrders: number;
   totalMenuItems: number;
 }
 
-export default function StatsCards({ totalRevenue, totalOrders, servedOrders, totalMenuItems }: StatsCardsProps) {
+export default function StatsCards({ totalRevenue, totalOrders, servedOrders, cancelledOrders, totalMenuItems }: StatsCardsProps) {
   const stats = [
     {
       title: 'Total Revenue',
@@ -28,10 +29,11 @@ export default function StatsCards({ totalRevenue, totalOrders, servedOrders, to
       value: servedOrders,
       icon: CheckSquare,
     },
-    {
-      title: 'Menu Items',
-      value: totalMenuItems,
-      icon: Utensils,
+     {
+      title: 'Orders Cancelled',
+      value: cancelledOrders,
+      icon: XCircle,
+      className: "text-destructive"
     },
   ];
 
@@ -44,7 +46,7 @@ export default function StatsCards({ totalRevenue, totalOrders, servedOrders, to
             <stat.icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stat.value}</div>
+            <div className={`text-2xl font-bold ${stat.className || ''}`}>{stat.value}</div>
           </CardContent>
         </Card>
       ))}
