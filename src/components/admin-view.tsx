@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserManagement from './user-management';
 import LiveStatusDashboard from './live-status-dashboard';
 import ServedOrdersList from './served-orders-list';
+import CancelledOrdersList from './cancelled-orders-list';
 
 interface AdminViewProps {
   orders: Order[];
@@ -77,9 +78,13 @@ export default function AdminView({
             />
         </TabsContent>
 
-         <TabsContent value="history" className="mt-6">
+         <TabsContent value="history" className="mt-6 space-y-8">
             <ServedOrdersList 
                 orders={servedOrders}
+                waiters={waiters}
+            />
+            <CancelledOrdersList
+                orders={cancelledOrders}
                 waiters={waiters}
             />
         </TabsContent>
