@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Check, IndianRupee, Loader2, Printer } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { useState, useEffect } from 'react';
-import { createRazorpayOrder, verifyRazorpayPayment, markBillAsPaid } from '@/app/actions';
+import { createRazorpayOrder, verifyRazorpayPayment } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import QRCode from "react-qr-code";
 import Logo from './logo';
@@ -163,7 +163,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
             if (newWindow) {
                 newWindow.document.write('<html><head><title>Print Bill</title>');
                 // You can include a link to your stylesheet or inline styles here
-                newWindow.document.write('<style>body { font-family: sans-serif; margin: 20px; } table { width: 100%; border-collapse: collapse; } th, td { padding: 4px; text-align: left; } .text-center { text-align: center; } .text-right { text-align: right; } .font-mono { font-family: monospace; } .font-bold { font-weight: bold; } .text-sm { font-size: 0.875rem; } .text-xs { font-size: 0.75rem; } .mt-2 { margin-top: 0.5rem; } .mt-4 { margin-top: 1rem; } .mb-2 { margin-bottom: 0.5rem; } .my-4 { margin-top: 1rem; margin-bottom: 1rem; } .border-b { border-bottom: 1px dashed black; } .border { border: 1px solid #ccc; } .p-2 { padding: 0.5rem; } .rounded-md { border-radius: 0.375rem; } .flex { display: flex; } .flex-col { flex-direction: column; } .items-center { align-items: center; } .gap-2 { gap: 0.5rem; } .justify-between { justify-content: space-between; } .relative { position: relative; } .inset-0 { top: 0; right: 0; bottom: 0; left: 0; } .transform { transform: rotate(-12deg); } .text-8xl { font-size: 6rem; } .text-green-500\\/30 { color: rgba(34, 197, 94, 0.3); } .border-green-500\\/30 { border-color: rgba(34, 197, 94, 0.3); } .border-4 { border-width: 4px; } .p-8 { padding: 2rem; } .rounded-lg { border-radius: 0.5rem; } </style>')
+                newWindow.document.write('<style>body { font-family: sans-serif; margin: 20px; } table { width: 100%; border-collapse: collapse; } th, td { padding: 4px; text-align: left; } .text-center { text-align: center; } .text-right { text-align: right; } .font-mono { font-family: monospace; } .font-bold { font-weight: bold; } .text-sm { font-size: 0.875rem; } .text-xs { font-size: 0.75rem; } .mt-2 { margin-top: 0.5rem; } .mt-4 { margin-top: 1rem; } .mb-2 { margin-bottom: 0.5rem; } .my-4 { margin-top: 1rem; margin-bottom: 1rem; } .border-b { border-bottom: 1px dashed black; } .border { border: 1px solid #ccc; } .p-2 { padding: 0.5rem; } .rounded-md { border-radius: 0.375rem; } .flex { display: flex; } .flex-col { flex-direction: column; } .items-center { align-items: center; } .gap-2 { gap: 0.5rem; } .justify-between { justify-content: space-between; } .relative { position: relative; } .inset-0 { top: 0; right: 0; bottom: 0; left: 0; } .transform { transform: rotate(-12deg); } .text-8xl { font-size: 6rem; } .text-green-500\\/30 { color: rgba(34, 197, 94, 0.3); } .border-green-500\\/30 { border-color: rgba(34, 197, 94, 0.3); } .border-4 { border-width: 4px; } .p-8 { padding: 2rem; } .rounded-lg { border-radius: 0.5rem; } .break-all { word-break: break-all; } </style>')
                 newWindow.document.write('</head><body>');
                 newWindow.document.write(printContent.innerHTML);
                 newWindow.document.write('</body></html>');
@@ -189,31 +189,30 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                  {/* This is the hidden, styled-for-print div */}
                  <div id="printable-bill" className="hidden">
                     {isPaid && (
-                        <div className="relative">
-                             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-12deg)', zIndex: 10 }}>
-                                <span style={{ fontSize: '6rem', fontWeight: 'bold', color: 'rgba(34, 197, 94, 0.3)', border: '4px solid rgba(34, 197, 94, 0.3)', borderRadius: '0.5rem', padding: '2rem' }}>
+                        <div style={{ position: 'relative' }}>
+                             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-12deg)', zIndex: 10, opacity: 0.2 }}>
+                                <span style={{ fontSize: '6rem', fontWeight: 'bold', color: 'rgba(34, 197, 94, 1)', border: '4px solid rgba(34, 197, 94, 1)', borderRadius: '0.5rem', padding: '2rem' }}>
                                     PAID
                                 </span>
                             </div>
                         </div>
                     )}
                     <div className="flex flex-col items-center text-center">
-                        {/* The logo component won't work here, so we use a placeholder or text */}
                         <h2 style={{fontWeight: 'bold', fontSize: '1.25rem', marginTop: '0.5rem' }}>Vinnoswad Restaurant</h2>
                         <p className="text-sm">117-NH, Sarisha Ashram More, Diamond Harbour</p>
                         <p className="text-sm">South 24 Parganas, PIN - 743368, WB, INDIA</p>
                         <p className="text-sm">GSTIN: 29GGGGG1314G1Z4</p>
                     </div>
-                    <hr className="my-4 border-b" />
+                    <hr style={{borderBottom: '1px dashed black', margin: '1rem 0'}} />
                     <div className="text-xs">
                         <p><strong>Bill No:</strong> {bill.id.slice(-6)}</p>
                         <p><strong>Table:</strong> {bill.tableNumber}</p>
                         <p><strong>Date:</strong> {format(new Date(bill.timestamp), "dd-MMM-yyyy hh:mm a")}</p>
                     </div>
-                     <hr className="my-4 border-b" />
+                     <hr style={{borderBottom: '1px dashed black', margin: '1rem 0'}} />
                      <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b">
+                            <tr style={{borderBottom: '1px dashed black'}}>
                                 <th className="text-left pb-2 font-bold">Item</th>
                                 <th className="text-center pb-2 font-bold">Qty</th>
                                 <th className="text-right pb-2 font-bold">Price</th>
@@ -223,7 +222,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                         <tbody>
                             {finalItems.map((item, index) => (
                                 <tr key={`${item.menuItemId}-${index}`}>
-                                    <td className="pt-2" style={{ wordBreak: 'break-all' }}>{item.name}</td>
+                                    <td className="pt-2 break-all">{item.name}</td>
                                     <td className="text-center pt-2">{item.quantity}</td>
                                     <td className="text-right pt-2 font-mono">{(item.price).toFixed(2)}</td>
                                     <td className="text-right pt-2 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
@@ -231,7 +230,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                             ))}
                         </tbody>
                      </table>
-                     <hr className="my-4 border-b" />
+                     <hr style={{borderBottom: '1px dashed black', margin: '1rem 0'}} />
                      <div className="text-sm" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
                         <div className="flex justify-between">
                             <span>Subtotal</span>
@@ -246,7 +245,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                             <span className="font-mono">₹{bill.total.toFixed(2)}</span>
                         </div>
                      </div>
-                     <hr className="my-4 border-b" />
+                     <hr style={{borderBottom: '1px dashed black', margin: '1rem 0'}} />
                       {!isPaid && (
                         <div className="flex flex-col items-center gap-2 mt-4">
                             <p className="text-xs font-bold">Scan to Pay</p>
@@ -334,13 +333,13 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                             <Printer className="mr-2 h-4 w-4"/> {isPaid ? 'Print Paid Receipt' : 'Print Bill'}
                         </Button>
                         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-                            {/* <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>Close</Button> */}
                             {!isRazorpayConfigured && !isPaid && (
                                 <Button type="button" onClick={handleManualPayment} disabled={loading}>
                                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4"/>}
                                     {loading ? 'Confirming...' : 'Confirm Payment'}
                                 </Button>
                             )}
+                             <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>Close</Button>
                         </div>
                     </DialogFooter>
                 </div>
@@ -348,3 +347,5 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
         </Dialog>
     );
 }
+
+    
