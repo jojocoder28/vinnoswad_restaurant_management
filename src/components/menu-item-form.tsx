@@ -88,7 +88,13 @@ export default function MenuItemForm({ isOpen, onClose, onSave, item }: MenuItem
       if (item) {
         onSave({ ...item, ...finalValues });
       } else {
-        onSave({ ...finalValues, isAvailable: true });
+        // For new items, initialize ingredients and cost
+        onSave({ 
+            ...finalValues, 
+            isAvailable: true, 
+            ingredients: [], 
+            costOfGoods: 0 
+        });
       }
       onClose();
 

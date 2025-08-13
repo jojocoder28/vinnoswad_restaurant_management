@@ -4,7 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/mongodb';
 import { initialMenuItems, initialOrders, initialWaiters, initialTables, initialUsers } from '@/lib/mock-data';
-import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus, OrderItem, Bill, BillStatus, ReportData, OrderReport } from '@/lib/types';
+import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus, OrderItem, Bill, BillStatus, ReportData, OrderReport, Supplier, StockItem, PurchaseOrder, PurchaseStatus } from '@/lib/types';
 import { Collection, ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
@@ -352,7 +352,26 @@ export async function addMenuItem(itemData: Omit<MenuItem, 'id'>): Promise<MenuI
 
 export async function updateMenuItem(updatedItem: MenuItem): Promise<void> {
     const menuItemsCollection = await getCollection<MenuItem>('menu');
+    const stockItemsCollection = await getCollection<StockItem>('stock');
     const { id, ...dataToUpdate } = updatedItem;
+
+    // Recalculate cost of goods if ingredients are present
+    let costOfGoods = 0;
+    if (dataToUpdate.ingredients && dataToUpdate.ingredients.length > 0) {
+        const stockItemIds = dataToUpdate.ingredients.map(i => new ObjectId(i.stockItemId));
+        const stockItems = await stockItemsCollection.find({ _id: { $in: stockItemIds } }).toArray();
+        const stockItemMap = new Map(stockItems.map(si => [si._id.toHexString(), si]));
+
+        costOfGoods = dataToUpdate.ingredients.reduce((total, ing) => {
+            const stockItem = stockItemMap.get(ing.stockItemId);
+            if (stockItem) {
+                return total + (stockItem.averageCostPerUnit * ing.quantity);
+            }
+            return total;
+        }, 0);
+    }
+    dataToUpdate.costOfGoods = costOfGoods;
+
     await menuItemsCollection.updateOne(
         { _id: new ObjectId(id) },
         { $set: dataToUpdate }
@@ -522,4 +541,107 @@ export async function getReportData(startDate: string, endDate: string): Promise
             waiters,
         }
     }
+}
+
+// Supply Chain Actions
+
+// Suppliers
+export async function getSuppliers(): Promise<Supplier[]> {
+    const collection = await getCollection<Supplier>('suppliers');
+    const suppliers = await collection.find().toArray();
+    return suppliers.map(mapId);
+}
+
+export async function addSupplier(data: Omit<Supplier, 'id'>): Promise<Supplier> {
+    const collection = await getCollection<Supplier>('suppliers');
+    const result = await collection.insertOne(data);
+    revalidatePath('/admin');
+    return mapId({ ...data, _id: result.insertedId });
+}
+
+export async function updateSupplier(data: Supplier): Promise<void> {
+    const collection = await getCollection<Supplier>('suppliers');
+    const { id, ...updateData } = data;
+    await collection.updateOne({ _id: new ObjectId(id) }, { $set: updateData });
+    revalidatePath('/admin');
+}
+
+export async function deleteSupplier(id: string): Promise<void> {
+    const collection = await getCollection<Supplier>('suppliers');
+    await collection.deleteOne({ _id: new ObjectId(id) });
+    revalidatePath('/admin');
+}
+
+// Stock Items
+export async function getStockItems(): Promise<StockItem[]> {
+    const collection = await getCollection<StockItem>('stock');
+    const items = await collection.find().toArray();
+    return items.map(mapId);
+}
+
+export async function addStockItem(data: Omit<StockItem, 'id'>): Promise<StockItem> {
+    const collection = await getCollection<StockItem>('stock');
+    const result = await collection.insertOne(data);
+    revalidatePath('/admin');
+    return mapId({ ...data, _id: result.insertedId });
+}
+
+export async function updateStockItem(data: StockItem): Promise<void> {
+    const collection = await getCollection<StockItem>('stock');
+    const { id, ...updateData } = data;
+    await collection.updateOne({ _id: new ObjectId(id) }, { $set: updateData });
+    revalidatePath('/admin');
+}
+
+export async function deleteStockItem(id: string): Promise<void> {
+    const collection = await getCollection<StockItem>('stock');
+    await collection.deleteOne({ _id: new ObjectId(id) });
+    revalidatePath('/admin');
+}
+
+// Purchase Orders
+export async function getPurchaseOrders(): Promise<PurchaseOrder[]> {
+    const collection = await getCollection<PurchaseOrder>('purchase_orders');
+    const orders = await collection.find().sort({ date: -1 }).toArray();
+    return orders.map(mapId);
+}
+
+export async function addPurchaseOrder(data: Omit<PurchaseOrder, 'id'>): Promise<PurchaseOrder> {
+    const collection = await getCollection<PurchaseOrder>('purchase_orders');
+    const result = await collection.insertOne(data);
+    revalidatePath('/admin');
+    return mapId({ ...data, _id: result.insertedId });
+}
+
+export async function updatePurchaseOrderStatus(id: string, status: PurchaseStatus): Promise<void> {
+    const poCollection = await getCollection<PurchaseOrder>('purchase_orders');
+    
+    await poCollection.updateOne({ _id: new ObjectId(id) }, { $set: { status } });
+
+    if (status === 'received') {
+        const purchaseOrder = await poCollection.findOne({ _id: new ObjectId(id) });
+        if (purchaseOrder) {
+            const stockCollection = await getCollection<StockItem>('stock');
+            // This is a complex operation, ideally done in a transaction
+            for (const item of purchaseOrder.items) {
+                const stockItem = await stockCollection.findOne({ _id: new ObjectId(item.stockItemId) });
+                if (stockItem) {
+                    const currentStockValue = stockItem.quantityInStock * stockItem.averageCostPerUnit;
+                    const purchaseValue = item.quantity * item.costPerUnit;
+                    
+                    const newTotalQuantity = stockItem.quantityInStock + item.quantity;
+                    const newAverageCost = (currentStockValue + purchaseValue) / newTotalQuantity;
+
+                    await stockCollection.updateOne(
+                        { _id: new ObjectId(item.stockItemId) },
+                        { 
+                            $inc: { quantityInStock: item.quantity },
+                            $set: { averageCostPerUnit: newAverageCost }
+                        }
+                    );
+                }
+            }
+        }
+    }
+    revalidatePath('/admin');
 }

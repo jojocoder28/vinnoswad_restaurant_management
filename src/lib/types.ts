@@ -4,6 +4,12 @@ export type OrderStatus = 'pending' | 'approved' | 'prepared' | 'served' | 'canc
 export type UserRole = 'admin' | 'manager' | 'waiter' | 'kitchen';
 export type UserStatus = 'pending' | 'approved';
 export type BillStatus = 'unpaid' | 'paid';
+export type PurchaseStatus = 'ordered' | 'received' | 'cancelled';
+
+export interface MenuItemIngredient {
+  stockItemId: string;
+  quantity: number; // The amount of the stock item used in this menu item
+}
 
 export interface MenuItem {
   id: string;
@@ -12,6 +18,8 @@ export interface MenuItem {
   category: string;
   imageUrl: string;
   isAvailable: boolean;
+  ingredients: MenuItemIngredient[];
+  costOfGoods: number;
 }
 
 export interface OrderItem {
@@ -72,6 +80,40 @@ export interface DecodedToken {
   iat: number;
   exp: number;
 }
+
+// Supply Chain & P&L
+export interface StockItem {
+  id: string;
+  name: string;
+  unit: 'kg' | 'g' | 'l' | 'ml' | 'piece';
+  quantityInStock: number;
+  lowStockThreshold: number;
+  averageCostPerUnit: number;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  contactPerson?: string;
+  phone: string;
+  email?: string;
+}
+
+export interface PurchaseOrderItem {
+  stockItemId: string;
+  quantity: number;
+  costPerUnit: number;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  supplierId: string;
+  items: PurchaseOrderItem[];
+  totalCost: number;
+  date: string;
+  status: PurchaseStatus;
+}
+
 
 // Report-specific types
 export interface OrderReportItem extends OrderItem {

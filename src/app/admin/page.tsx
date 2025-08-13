@@ -2,8 +2,13 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Order, MenuItem, Waiter, DecodedToken, User, UserStatus, UserRole, Table } from '@/lib/types';
-import { getOrders, getMenuItems, getWaiters, getUsers, updateUserStatus, deleteUser, registerUser, getTables, addMenuItem, updateMenuItem, deleteMenuItem } from '../actions';
+import type { Order, MenuItem, Waiter, DecodedToken, User, UserStatus, UserRole, Table, Supplier, StockItem, PurchaseOrder } from '@/lib/types';
+import { 
+    getOrders, getMenuItems, getWaiters, getUsers, updateUserStatus, deleteUser, registerUser, getTables, addMenuItem, updateMenuItem, deleteMenuItem,
+    getSuppliers, addSupplier, updateSupplier, deleteSupplier,
+    getStockItems, addStockItem, updateStockItem, deleteStockItem,
+    getPurchaseOrders, addPurchaseOrder, updatePurchaseOrderStatus
+} from '../actions';
 import AdminView from '@/components/admin-view';
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from '@/components/dashboard-layout';
@@ -17,6 +22,10 @@ export default function AdminPage() {
   const [waiters, setWaiters] = useState<Waiter[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [stockItems, setStockItems] = useState<StockItem[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<DecodedToken | null>(null);
   const { toast } = useToast();
@@ -27,12 +36,18 @@ export default function AdminPage() {
     async function fetchData() {
       try {
         setLoading(true);
-        const [ordersData, menuItemsData, waitersData, usersData, tablesData, session] = await Promise.all([
+        const [
+            ordersData, menuItemsData, waitersData, usersData, tablesData, 
+            suppliersData, stockItemsData, purchaseOrdersData, session
+        ] = await Promise.all([
           getOrders(),
           getMenuItems(),
           getWaiters(),
           getUsers(),
           getTables(),
+          getSuppliers(),
+          getStockItems(),
+          getPurchaseOrders(),
           getSession()
         ]);
         
@@ -47,6 +62,10 @@ export default function AdminPage() {
         setWaiters(waitersData);
         setUsers(usersData);
         setTables(tablesData);
+        setSuppliers(suppliersData);
+        setStockItems(stockItemsData);
+        setPurchaseOrders(purchaseOrdersData);
+
       } catch (error) {
         console.error("Failed to fetch data:", error);
         toast({
@@ -145,7 +164,8 @@ export default function AdminPage() {
   const handleUpdateMenuItem = async (updatedItem: MenuItem) => {
     try {
       await updateMenuItem(updatedItem);
-      setMenuItems(prev => prev.map(item => (item.id === updatedItem.id ? updatedItem : item)));
+      const updatedMenuItems = await getMenuItems();
+      setMenuItems(updatedMenuItems);
        toast({
         title: "Menu Item Updated",
         description: `${updatedItem.name} has been updated.`,
@@ -177,6 +197,49 @@ export default function AdminPage() {
     }
   };
 
+  // Supply Chain Handlers
+  const handleAddSupplier = async (data: Omit<Supplier, 'id'>) => {
+      await addSupplier(data);
+      setSuppliers(await getSuppliers());
+      toast({ title: "Supplier Added" });
+  };
+  const handleUpdateSupplier = async (data: Supplier) => {
+      await updateSupplier(data);
+      setSuppliers(await getSuppliers());
+      toast({ title: "Supplier Updated" });
+  };
+  const handleDeleteSupplier = async (id: string) => {
+      await deleteSupplier(id);
+      setSuppliers(await getSuppliers());
+      toast({ title: "Supplier Deleted", variant: "destructive" });
+  };
+  const handleAddStockItem = async (data: Omit<StockItem, 'id'>) => {
+      await addStockItem(data);
+      setStockItems(await getStockItems());
+      toast({ title: "Stock Item Added" });
+  };
+  const handleUpdateStockItem = async (data: StockItem) => {
+      await updateStockItem(data);
+      setStockItems(await getStockItems());
+      toast({ title: "Stock Item Updated" });
+  };
+  const handleDeleteStockItem = async (id: string) => {
+      await deleteStockItem(id);
+      setStockItems(await getStockItems());
+      toast({ title: "Stock Item Deleted", variant: "destructive" });
+  };
+  const handleAddPurchaseOrder = async (data: Omit<PurchaseOrder, 'id'>) => {
+      await addPurchaseOrder(data);
+      setPurchaseOrders(await getPurchaseOrders());
+      toast({ title: "Purchase Order Created" });
+  };
+  const handleReceivePurchaseOrder = async (id: string) => {
+      await updatePurchaseOrderStatus(id, 'received');
+      setPurchaseOrders(await getPurchaseOrders());
+      setStockItems(await getStockItems()); // Stock levels have changed
+      toast({ title: "Purchase Order Received", description: "Stock levels have been updated." });
+  };
+
 
   if (loading || !user) {
     return (
@@ -197,12 +260,23 @@ export default function AdminPage() {
             waiters={waiters} 
             users={users}
             tables={tables}
+            suppliers={suppliers}
+            stockItems={stockItems}
+            purchaseOrders={purchaseOrders}
             onUpdateUserStatus={handleUpdateUserStatus}
             onDeleteUser={handleDeleteUser}
             onCreateUser={handleCreateUser}
             onAddMenuItem={handleAddMenuItem}
             onUpdateMenuItem={handleUpdateMenuItem}
             onDeleteMenuItem={handleDeleteMenuItem}
+            onAddSupplier={handleAddSupplier}
+            onUpdateSupplier={handleUpdateSupplier}
+            onDeleteSupplier={handleDeleteSupplier}
+            onAddStockItem={handleAddStockItem}
+            onUpdateStockItem={handleUpdateStockItem}
+            onDeleteStockItem={handleDeleteStockItem}
+            onAddPurchaseOrder={handleAddPurchaseOrder}
+            onReceivePurchaseOrder={handleReceivePurchaseOrder}
             currentUser={user}
         />
     </DashboardLayout>

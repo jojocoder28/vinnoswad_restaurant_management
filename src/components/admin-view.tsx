@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { Order, MenuItem, Waiter, User, UserStatus, DecodedToken, Table } from '@/lib/types';
+import type { Order, MenuItem, Waiter, User, UserStatus, DecodedToken, Table, Supplier, StockItem, PurchaseOrder } from '@/lib/types';
 import StatsCards from './stats-cards';
 import RevenueCharts from './revenue-charts';
 import { useMemo } from 'react';
@@ -12,6 +12,8 @@ import ServedOrdersList from './served-orders-list';
 import CancelledOrdersList from './cancelled-orders-list';
 import ReportGenerator from './report-generator';
 import MenuManagement from './menu-management';
+import SupplyChainManagement from './supply-chain-management';
+import ProfitLossAnalysis from './profit-loss-analysis';
 
 interface AdminViewProps {
   orders: Order[];
@@ -19,12 +21,23 @@ interface AdminViewProps {
   waiters: Waiter[];
   users: User[];
   tables: Table[];
+  suppliers: Supplier[];
+  stockItems: StockItem[];
+  purchaseOrders: PurchaseOrder[];
   onUpdateUserStatus: (userId: string, status: UserStatus) => void;
   onDeleteUser: (userId: string) => void;
   onCreateUser: (userData: Omit<User, 'id' | 'status'>) => void;
   onAddMenuItem: (item: Omit<MenuItem, 'id'>) => void;
   onUpdateMenuItem: (item: MenuItem) => void;
   onDeleteMenuItem: (id: string) => void;
+  onAddSupplier: (data: Omit<Supplier, 'id'>) => void;
+  onUpdateSupplier: (data: Supplier) => void;
+  onDeleteSupplier: (id: string) => void;
+  onAddStockItem: (data: Omit<StockItem, 'id'>) => void;
+  onUpdateStockItem: (data: StockItem) => void;
+  onDeleteStockItem: (id: string) => void;
+  onAddPurchaseOrder: (data: Omit<PurchaseOrder, 'id'>) => void;
+  onReceivePurchaseOrder: (id: string) => void;
   currentUser: DecodedToken;
 }
 
@@ -34,12 +47,23 @@ export default function AdminView({
     waiters, 
     users, 
     tables,
+    suppliers,
+    stockItems,
+    purchaseOrders,
     onUpdateUserStatus, 
     onDeleteUser,
     onCreateUser, 
     onAddMenuItem,
     onUpdateMenuItem,
     onDeleteMenuItem,
+    onAddSupplier,
+    onUpdateSupplier,
+    onDeleteSupplier,
+    onAddStockItem,
+    onUpdateStockItem,
+    onDeleteStockItem,
+    onAddPurchaseOrder,
+    onReceivePurchaseOrder,
     currentUser 
 }: AdminViewProps) {
   const servedOrders = useMemo(() => orders.filter(o => o.status === 'served' || o.status === 'billed'), [orders]);
@@ -59,10 +83,12 @@ export default function AdminView({
 
   return (
     <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 md:w-fit">
+        <TabsList className="grid w-full grid-cols-1 md:grid-cols-8">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="status">Restaurant Status</TabsTrigger>
             <TabsTrigger value="menu">Menu</TabsTrigger>
+            <TabsTrigger value="inventory">Inventory</TabsTrigger>
+            <TabsTrigger value="pnl">P&L Analysis</TabsTrigger>
             <TabsTrigger value="history">Order History</TabsTrigger>
             <TabsTrigger value="users">Staff & Users</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -96,6 +122,28 @@ export default function AdminView({
                 onDeleteMenuItem={onDeleteMenuItem}
                 currentUserRole={currentUser.role}
             />
+        </TabsContent>
+
+        <TabsContent value="inventory" className="mt-6">
+            <SupplyChainManagement 
+                suppliers={suppliers}
+                stockItems={stockItems}
+                purchaseOrders={purchaseOrders}
+                menuItems={menuItems}
+                onAddSupplier={onAddSupplier}
+                onUpdateSupplier={onUpdateSupplier}
+                onDeleteSupplier={onDeleteSupplier}
+                onAddStockItem={onAddStockItem}
+                onUpdateStockItem={onUpdateStockItem}
+                onDeleteStockItem={onDeleteStockItem}
+                onAddPurchaseOrder={onAddPurchaseOrder}
+                onReceivePurchaseOrder={onReceivePurchaseOrder}
+                onUpdateMenuItem={onUpdateMenuItem}
+            />
+        </TabsContent>
+
+        <TabsContent value="pnl" className="mt-6">
+            <ProfitLossAnalysis menuItems={menuItems} orders={servedOrders} />
         </TabsContent>
 
          <TabsContent value="history" className="mt-6 space-y-8">
