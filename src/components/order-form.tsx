@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { MenuItem, Order, Table, OrderItem } from '@/lib/types';
+import { useEffect } from 'react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,9 @@ interface OrderFormProps {
   menuItems: MenuItem[];
   waiterId: string;
   onCreateOrder: (order: Omit<Order, 'id' | 'timestamp' | 'status' | 'items'> & { items: Omit<OrderItem, 'price'>[] }, tableId: string) => void;
+  onUpdateOrder?: (orderId: string, items: Omit<OrderItem, 'price'>[]) => void;
   tables: Table[];
+  editingOrder?: Order | null;
 }
 
 const orderItemSchema = z.object({
@@ -33,7 +36,8 @@ const orderFormSchema = z.object({
   items: z.array(orderItemSchema).min(1, 'Please add at least one item to the order'),
 });
 
-export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCreateOrder, tables }: OrderFormProps) {
+export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCreateOrder, onUpdateOrder, tables, editingOrder }: OrderFormProps) {
+  
   const form = useForm<z.infer<typeof orderFormSchema>>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
@@ -42,26 +46,45 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
     },
   });
 
+  useEffect(() => {
+    if (editingOrder) {
+      const table = tables.find(t => t.tableNumber === editingOrder.tableNumber);
+      form.reset({
+        tableId: table?.id || '',
+        items: editingOrder.items.map(item => ({
+          menuItemId: item.menuItemId,
+          quantity: item.quantity,
+        })),
+      });
+    } else {
+       form.reset({
+        tableId: '',
+        items: [{ menuItemId: '', quantity: 1 }]
+      });
+    }
+  }, [editingOrder, form, tables]);
+
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'items',
   });
 
   const onSubmit = (values: z.infer<typeof orderFormSchema>) => {
-    const selectedTable = tables.find(t => t.id === values.tableId);
-    if (!selectedTable) return;
+    if (editingOrder && onUpdateOrder) {
+        onUpdateOrder(editingOrder.id, values.items);
+    } else {
+        const selectedTable = tables.find(t => t.id === values.tableId);
+        if (!selectedTable) return;
 
-    const orderData = {
-      tableNumber: selectedTable.tableNumber,
-      items: values.items,
-      waiterId,
+        const orderData = {
+          tableNumber: selectedTable.tableNumber,
+          items: values.items,
+          waiterId,
+        }
+        onCreateOrder(orderData, values.tableId);
     }
-    onCreateOrder(orderData, values.tableId);
-    form.reset({
-      tableId: '',
-      items: [{ menuItemId: '', quantity: 1 }]
-    });
-    onClose();
+    
+    handleClose();
   };
   
   const handleClose = () => {
@@ -71,13 +94,15 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
     });
     onClose();
   }
+  
+  const isEditing = !!editingOrder;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className='font-headline'>Create New Order</DialogTitle>
-          <DialogDescription>Fill in the details to place a new order.</DialogDescription>
+          <DialogTitle className='font-headline'>{isEditing ? 'Edit Order' : 'Create New Order'}</DialogTitle>
+          <DialogDescription>{isEditing ? `Updating order for Table ${editingOrder.tableNumber}.` : 'Fill in the details to place a new order.'}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -87,7 +112,7 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Table Number</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                   <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isEditing}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select an available table" />
@@ -95,8 +120,8 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
                     </FormControl>
                     <SelectContent>
                       {tables.map(table => (
-                        <SelectItem key={table.id} value={table.id}>
-                          Table {table.tableNumber} {table.waiterId === waiterId ? '(Your Table)' : ''}
+                        <SelectItem key={table.id} value={table.id} disabled={!isEditing && table.status !== 'available'}>
+                          Table {table.tableNumber} {table.status !== 'available' && !isEditing ? '(Occupied)' : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -170,7 +195,7 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
             
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={handleClose}>Cancel</Button>
-              <Button type="submit">Place Order</Button>
+              <Button type="submit">{isEditing ? 'Update Order' : 'Place Order'}</Button>
             </DialogFooter>
           </form>
         </Form>

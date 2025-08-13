@@ -263,6 +263,30 @@ export async function createOrder(orderData: Omit<Order, 'id' | 'timestamp' | 's
     return mapId<Order>({ ...newOrder, _id: result.insertedId });
 }
 
+export async function updateOrder(orderId: string, itemsData: Omit<OrderItem, 'price'>[]): Promise<Order> {
+    const ordersCollection = await getCollection<Order>('orders');
+    const menuItemsCollection = await getCollection<MenuItem>('menu');
+
+    const itemsWithPrices: OrderItem[] = await Promise.all(
+        itemsData.map(async (item) => {
+            const menuItem = await menuItemsCollection.findOne({ _id: new ObjectId(item.menuItemId) });
+            if (!menuItem) throw new Error(`Menu item with id ${item.menuItemId} not found`);
+            return { ...item, price: menuItem.price };
+        })
+    );
+
+    await ordersCollection.updateOne(
+        { _id: new ObjectId(orderId) },
+        { $set: { items: itemsWithPrices } }
+    );
+    
+    revalidatePath('/waiter');
+    revalidatePath('/manager');
+    const updatedOrder = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
+    return mapId<Order>(updatedOrder);
+}
+
+
 export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<void> {
     const ordersCollection = await getCollection<Order>('orders');
     
@@ -280,6 +304,18 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus): P
     revalidatePath('/manager');
     revalidatePath('/kitchen');
 }
+
+export async function deleteOrder(orderId: string): Promise<void> {
+    const ordersCollection = await getCollection<Order>('orders');
+    const order = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
+    if (order) {
+        await ordersCollection.deleteOne({ _id: new ObjectId(orderId) });
+        await freeUpTableIfNeeded(order.tableNumber, order.waiterId);
+    }
+    revalidatePath('/waiter');
+    revalidatePath('/manager');
+}
+
 
 export async function cancelOrder(orderId: string, reason: string): Promise<void> {
     const ordersCollection = await getCollection<Order>('orders');

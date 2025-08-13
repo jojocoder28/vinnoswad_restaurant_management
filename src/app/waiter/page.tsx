@@ -6,6 +6,8 @@ import type { Order, MenuItem, Waiter, Table, DecodedToken, OrderItem, Bill } fr
 import {
   getOrders,
   createOrder,
+  updateOrder,
+  deleteOrder,
   updateOrderStatus,
   getMenuItems,
   getWaiters,
@@ -88,6 +90,44 @@ export default function WaiterPage() {
       });
     }
   };
+  
+  const handleUpdateOrder = async (orderId: string, items: Omit<OrderItem, 'price'>[]) => {
+     try {
+      const updatedOrder = await updateOrder(orderId, items);
+      setOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o));
+      toast({
+        title: "Order Updated",
+        description: `Order for table ${updatedOrder.tableNumber} has been updated.`,
+      });
+    } catch (error) {
+       toast({
+        title: "Error",
+        description: "Failed to update order.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      await deleteOrder(orderId);
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      const tablesData = await getTables();
+      setTables(tablesData);
+      toast({
+        title: "Order Cancelled",
+        description: `The order has been successfully cancelled.`,
+        variant: "destructive"
+      });
+    } catch (error) {
+       toast({
+        title: "Error",
+        description: "Failed to cancel order.",
+        variant: "destructive",
+      });
+    }
+  };
+
 
   const handleUpdateOrderStatus = async (orderId: string, status: Order['status']) => {
     try {
@@ -168,6 +208,8 @@ export default function WaiterPage() {
             tables={tables}
             onUpdateStatus={handleUpdateOrderStatus}
             onCreateOrder={handleCreateOrder}
+            onUpdateOrder={handleUpdateOrder}
+            onDeleteOrder={handleDeleteOrder}
             onCreateBill={handleCreateBill}
             onPayBill={handlePayBill}
             currentUser={user}

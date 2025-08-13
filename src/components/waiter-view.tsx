@@ -4,12 +4,13 @@
 import React, { useMemo, useState } from 'react';
 import type { Order, MenuItem, Waiter, OrderStatus, Table, DecodedToken, OrderItem, Bill } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Utensils, ShieldAlert, FileText, Check } from 'lucide-react';
+import { PlusCircle, Utensils, ShieldAlert, FileText, Check, MoreHorizontal, FilePenLine, XCircle } from 'lucide-react';
 import OrderCard from './order-card';
 import OrderForm from './order-form';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 
 
 interface WaiterViewProps {
@@ -20,6 +21,8 @@ interface WaiterViewProps {
   tables: Table[];
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
   onCreateOrder: (order: Omit<Order, 'id' | 'timestamp' | 'status' | 'items'> & { items: Omit<OrderItem, 'price'>[] }, tableId: string) => void;
+  onUpdateOrder: (orderId: string, items: Omit<OrderItem, 'price'>[]) => void;
+  onDeleteOrder: (orderId: string) => void;
   onCreateBill: (tableNumber: number, waiterId: string) => void;
   onPayBill: (billId: string) => void;
   currentUser: DecodedToken;
@@ -44,9 +47,10 @@ const BillCard = ({ bill, onPayBill }: { bill: Bill, onPayBill: (billId: string)
     </Card>
 );
 
-export default function WaiterView({ orders, bills, menuItems, waiters, tables, onUpdateStatus, onCreateOrder, onCreateBill, onPayBill, currentUser }: WaiterViewProps) {
+export default function WaiterView({ orders, bills, menuItems, waiters, tables, onUpdateStatus, onCreateOrder, onUpdateOrder, onDeleteOrder, onCreateBill, onPayBill, currentUser }: WaiterViewProps) {
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
-  const [confirmation, setConfirmation] = useState<{ orderId: string, status: OrderStatus, message: string } | null>(null);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [confirmation, setConfirmation] = useState<{ type: 'status' | 'delete', orderId: string, status?: OrderStatus, message: string } | null>(null);
 
   
   const selectedWaiter = useMemo(() => {
@@ -72,9 +76,16 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
     };
   }, [orders, selectedWaiter]);
   
-  const availableTables = useMemo(() => {
+  const availableTablesForNewOrder = useMemo(() => {
     if (!selectedWaiter) return [];
-    return tables.filter(table => table.status === 'available' || table.waiterId === selectedWaiter.id);
+    // For new orders, only completely available tables
+    return tables.filter(table => table.status === 'available');
+  }, [tables, selectedWaiter]);
+  
+  const tablesForEditing = useMemo(() => {
+     if (!selectedWaiter) return [];
+     // For editing, waiter can see their own tables + available ones
+     return tables.filter(table => table.status === 'available' || table.waiterId === selectedWaiter.id);
   }, [tables, selectedWaiter]);
 
   const tablesToBill = useMemo(() => {
@@ -93,10 +104,59 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
 
   const handleConfirm = () => {
     if (confirmation) {
-      onUpdateStatus(confirmation.orderId, confirmation.status);
+      if(confirmation.type === 'status' && confirmation.status) {
+        onUpdateStatus(confirmation.orderId, confirmation.status);
+      } else if (confirmation.type === 'delete') {
+        onDeleteOrder(confirmation.orderId);
+      }
       setConfirmation(null);
     }
   };
+
+  const handleEditOrder = (order: Order) => {
+    setEditingOrder(order);
+    setIsOrderFormOpen(true);
+  }
+
+  const handleCreateNewOrder = () => {
+    setEditingOrder(null);
+    setIsOrderFormOpen(true);
+  }
+  
+  const renderOrderActions = (order: Order) => {
+    const actions: React.ReactNode[] = [];
+    if (order.status === 'pending') {
+        actions.push(
+            <DropdownMenu key="actions-menu">
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEditOrder(order)}>
+                        <FilePenLine className="mr-2 h-4 w-4" /> Edit Order
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                        onClick={() => setConfirmation({ type: 'delete', orderId: order.id, message: `This will permanently cancel the order for Table ${order.tableNumber}. This action cannot be undone.`})}>
+                        <XCircle className="mr-2 h-4 w-4" /> Cancel Order
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        );
+    }
+
+    if(order.status === 'prepared') {
+        return (
+            <Button className="w-full" onClick={() => setConfirmation({ type: 'status', orderId: order.id, status: 'served', message: `This will mark the order for Table ${order.tableNumber} as served.` })}>
+                <Utensils className="mr-2 h-4 w-4"/> Mark as Served
+            </Button>
+        )
+    }
+
+    return actions.length > 0 ? <div className="flex items-center justify-end w-full">{actions}</div> : null;
+  }
 
 
   if (!selectedWaiter) {
@@ -117,7 +177,7 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <p>You are logged in as <span className="font-semibold">{selectedWaiter.name}</span>.</p>
-        <Button onClick={() => setIsOrderFormOpen(true)} disabled={!selectedWaiter.id || availableTables.length === 0}>
+        <Button onClick={handleCreateNewOrder} disabled={!selectedWaiter.id || availableTablesForNewOrder.length === 0}>
           <PlusCircle className="mr-2 h-4 w-4" /> New Order
         </Button>
       </div>
@@ -138,13 +198,7 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
                         order={order}
                         menuItems={menuItems}
                         waiterName={selectedWaiter?.name || 'Unknown'}
-                        actions={
-                            order.status === 'prepared' ? (
-                            <Button className="w-full" onClick={() => setConfirmation({ orderId: order.id, status: 'served', message: `This will mark the order for Table ${order.tableNumber} as served and complete the transaction.` })}>
-                                <Utensils className="mr-2 h-4 w-4"/> Mark as Served
-                            </Button>
-                            ) : null
-                        }
+                        actions={renderOrderActions(order)}
                         />
                     ))
                     ) : (
@@ -250,7 +304,9 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
         menuItems={menuItems}
         waiterId={selectedWaiter.id}
         onCreateOrder={onCreateOrder}
-        tables={availableTables}
+        onUpdateOrder={onUpdateOrder}
+        tables={editingOrder ? tablesForEditing : availableTablesForNewOrder}
+        editingOrder={editingOrder}
       />
     </div>
 
@@ -259,12 +315,12 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
             <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2"><ShieldAlert className="text-destructive"/>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    {confirmation?.message} This action cannot be easily undone.
+                    {confirmation?.message}
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setConfirmation(null)}>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirm}>Confirm</AlertDialogAction>
+                <AlertDialogCancel onClick={() => setConfirmation(null)}>Back</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirm} variant={confirmation?.type === 'delete' ? 'destructive' : 'default'}>Confirm</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
