@@ -13,6 +13,43 @@ import { Calendar as CalendarIcon, Download, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { subDays, startOfMonth, endOfMonth } from 'date-fns';
+import type { ReportData } from "@/lib/types";
+
+
+// Helper function to convert an array of objects to a CSV string
+function toCSV(data: any[], columns: string[]): string {
+    const header = columns.join(',');
+    const rows = data.map(row => {
+        return columns.map(col => {
+            let value = row[col];
+            if (value === null || value === undefined) {
+                return '';
+            }
+            if (typeof value === 'object') {
+                value = JSON.stringify(value);
+            }
+            const stringValue = String(value);
+            // Escape commas and quotes
+            if (stringValue.includes('"') || stringValue.includes(',')) {
+                return `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+        }).join(',');
+    });
+    return [header, ...rows].join('\n');
+}
+
+function downloadCSV(csvString: string, filename: string) {
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 
 
 export default function ReportGenerator() {
@@ -37,18 +74,30 @@ export default function ReportGenerator() {
         try {
             const reportData = await getReportData(format(date.from, "yyyy-MM-dd"), format(date.to, "yyyy-MM-dd"));
             
-            const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
-                JSON.stringify(reportData, null, 2)
-            )}`;
+            const fileSuffix = `${format(date.from, "yyyy-MM-dd")}_to_${format(date.to, "yyyy-MM-dd")}`;
+
+            // Create and download CSVs for each data type
+            if (reportData.data.orders.length > 0) {
+                const ordersCSV = toCSV(reportData.data.orders, Object.keys(reportData.data.orders[0]));
+                downloadCSV(ordersCSV, `orders_${fileSuffix}.csv`);
+            }
+            if (reportData.data.bills.length > 0) {
+                const billsCSV = toCSV(reportData.data.bills, Object.keys(reportData.data.bills[0]));
+                downloadCSV(billsCSV, `bills_${fileSuffix}.csv`);
+            }
+            if (reportData.data.users.length > 0) {
+                const usersCSV = toCSV(reportData.data.users, Object.keys(reportData.data.users[0]));
+                downloadCSV(usersCSV, `users_${fileSuffix}.csv`);
+            }
             
-            const link = document.createElement("a");
-            link.href = jsonString;
-            link.download = `eateryflow_report_${format(date.from, "yyyy-MM-dd")}_to_${format(date.to, "yyyy-MM-dd")}.json`;
-            link.click();
+            // Create a summary CSV
+            const summaryData = [{...reportData.summary, ...reportData.reportPeriod}];
+            const summaryCSV = toCSV(summaryData, Object.keys(summaryData[0]));
+            downloadCSV(summaryCSV, `summary_${fileSuffix}.csv`);
             
             toast({
                 title: "Report Generated",
-                description: "Your report has been downloaded successfully.",
+                description: "Your report CSV files have been downloaded.",
             });
 
         } catch (error) {
@@ -83,7 +132,7 @@ export default function ReportGenerator() {
         <Card>
             <CardHeader>
                 <CardTitle className="font-headline">Generate Reports</CardTitle>
-                <CardDescription>Download detailed restaurant data for a specified date range in JSON format.</CardDescription>
+                <CardDescription>Download detailed restaurant data for a specified date range in CSV format.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="flex flex-col sm:flex-row items-center gap-4">
