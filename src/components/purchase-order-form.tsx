@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { PurchaseOrder, Supplier, StockItem } from '@/lib/types';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { format } from 'date-fns';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -53,7 +53,7 @@ export default function PurchaseOrderForm({ isOpen, onClose, onSave, suppliers, 
 
   const watchedItems = form.watch('items');
   const totalCost = useMemo(() => {
-    return watchedItems.reduce((total, item) => total + (item.quantity * item.costPerUnit), 0);
+    return watchedItems.reduce((total, item) => total + ((item.quantity || 0) * (item.costPerUnit || 0)), 0);
   }, [watchedItems]);
 
 
@@ -165,7 +165,7 @@ export default function PurchaseOrderForm({ isOpen, onClose, onSave, suppliers, 
                       )}
                     />
                     <div className="col-span-2 flex items-center gap-1">
-                        <p className="text-sm font-medium w-full text-right">= ₹{(watchedItems[index].quantity * watchedItems[index].costPerUnit).toFixed(2)}</p>
+                        <p className="text-sm font-medium w-full text-right">= ₹{((watchedItems[index]?.quantity || 0) * (watchedItems[index]?.costPerUnit || 0)).toFixed(2)}</p>
                     </div>
 
                     <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} className="col-span-1">
