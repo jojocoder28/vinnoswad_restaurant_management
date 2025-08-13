@@ -102,7 +102,7 @@ export default function AdminView({
                 cancelledOrders={cancelledOrders.length}
                 totalMenuItems={totalMenuItems}
             />
-            <RevenueCharts orders={servedOrders} menuItems={menuItems} waiters={waiters} />
+            <RevenueCharts orders={servedOrders} menuItems={menuItems} waiters={waiters} tables={tables} />
         </TabsContent>
         
         <TabsContent value="status" className="mt-6">

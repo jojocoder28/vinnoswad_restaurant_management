@@ -3,15 +3,17 @@
 
 import { useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import type { Order, MenuItem, Waiter } from '@/lib/types';
+import type { Order, MenuItem, Waiter, Table } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { ChartConfig } from "@/components/ui/chart"
+import { format } from 'date-fns';
 
 interface RevenueChartsProps {
   orders: Order[];
   menuItems: MenuItem[];
   waiters: Waiter[];
+  tables: Table[];
 }
 
 const chartConfig = {
@@ -21,7 +23,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export default function RevenueCharts({ orders, menuItems, waiters }: RevenueChartsProps) {
+export default function RevenueCharts({ orders, menuItems, waiters, tables }: RevenueChartsProps) {
   const revenueByWaiter = useMemo(() => {
     const revenueMap = new Map<string, number>();
     orders.forEach(order => {
@@ -56,6 +58,34 @@ export default function RevenueCharts({ orders, menuItems, waiters }: RevenueCha
       revenue: data.revenue,
     })).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
   }, [orders, menuItems]);
+
+  const revenueByDayOfWeek = useMemo(() => {
+    const revenueMap = new Map<string, number>();
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    days.forEach(day => revenueMap.set(day, 0));
+
+    orders.forEach(order => {
+      const dayName = format(new Date(order.timestamp), 'EEEE');
+      const orderTotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      revenueMap.set(dayName, (revenueMap.get(dayName) || 0) + orderTotal);
+    });
+    
+    return days.map(day => ({ name: day, revenue: revenueMap.get(day) || 0 }));
+
+  }, [orders]);
+
+  const revenueByTable = useMemo(() => {
+    const revenueMap = new Map<number, number>();
+     orders.forEach(order => {
+      const orderTotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      revenueMap.set(order.tableNumber, (revenueMap.get(order.tableNumber) || 0) + orderTotal);
+    });
+
+    return Array.from(revenueMap.entries())
+      .map(([tableNumber, revenue]) => ({ name: `Table ${tableNumber}`, revenue}))
+      .sort((a,b) => parseInt(a.name.split(' ')[1]) - parseInt(b.name.split(' ')[1]));
+
+  }, [orders]);
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
@@ -93,6 +123,44 @@ export default function RevenueCharts({ orders, menuItems, waiters }: RevenueCha
                 content={<ChartTooltipContent formatter={(value) => `₹${Number(value).toFixed(2)}`} />}
               />
               <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+        <Card>
+        <CardHeader>
+          <CardTitle className='font-headline'>Revenue by Day of Week</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <BarChart data={revenueByDayOfWeek}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis tickFormatter={(value) => `₹${value}`} />
+              <Tooltip
+                cursor={{ fill: 'hsl(var(--muted))' }}
+                content={<ChartTooltipContent formatter={(value) => `₹${Number(value).toFixed(2)}`} />}
+              />
+              <Bar dataKey="revenue" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+       <Card>
+        <CardHeader>
+          <CardTitle className='font-headline'>Revenue by Table</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <BarChart data={revenueByTable}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis tickFormatter={(value) => `₹${value}`} />
+              <Tooltip
+                cursor={{ fill: 'hsl(var(--muted))' }}
+                content={<ChartTooltipContent formatter={(value) => `₹${Number(value).toFixed(2)}`} />}
+              />
+              <Bar dataKey="revenue" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ChartContainer>
         </CardContent>
