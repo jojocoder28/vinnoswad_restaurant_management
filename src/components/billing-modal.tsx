@@ -188,73 +188,73 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
             <DialogContent className="sm:max-w-lg">
                  {/* This is the hidden, styled-for-print div */}
                  <div id="printable-bill" className="hidden">
-                    {isPaid && (
-                        <div style={{ position: 'relative' }}>
-                             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-12deg)', zIndex: 10, opacity: 0.2 }}>
+                    <div style={{ position: 'relative' }}>
+                        {isPaid && (
+                            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-12deg)', zIndex: 10, opacity: 0.2 }}>
                                 <span style={{ fontSize: '6rem', fontWeight: 'bold', color: 'rgba(34, 197, 94, 1)', border: '4px solid rgba(34, 197, 94, 1)', borderRadius: '0.5rem', padding: '2rem' }}>
                                     PAID
                                 </span>
                             </div>
+                        )}
+                        <div className="flex flex-col items-center text-center">
+                            <h2 style={{fontWeight: 'bold', fontSize: '1.25rem', marginTop: '0.5rem' }}>Vinnoswad Restaurant</h2>
+                            <p className="text-sm">117-NH, Sarisha Ashram More, Diamond Harbour</p>
+                            <p className="text-sm">South 24 Parganas, PIN - 743368, WB, INDIA</p>
+                            <p className="text-sm">GSTIN: 29GGGGG1314G1Z4</p>
                         </div>
-                    )}
-                    <div className="flex flex-col items-center text-center">
-                        <h2 style={{fontWeight: 'bold', fontSize: '1.25rem', marginTop: '0.5rem' }}>Vinnoswad Restaurant</h2>
-                        <p className="text-sm">117-NH, Sarisha Ashram More, Diamond Harbour</p>
-                        <p className="text-sm">South 24 Parganas, PIN - 743368, WB, INDIA</p>
-                        <p className="text-sm">GSTIN: 29GGGGG1314G1Z4</p>
-                    </div>
-                    <hr style={{borderBottom: '1px dashed black', margin: '1rem 0'}} />
-                    <div className="text-xs">
-                        <p><strong>Bill No:</strong> {bill.id.slice(-6)}</p>
-                        <p><strong>Table:</strong> {bill.tableNumber}</p>
-                        <p><strong>Date:</strong> {format(new Date(bill.timestamp), "dd-MMM-yyyy hh:mm a")}</p>
-                    </div>
-                     <hr style={{borderBottom: '1px dashed black', margin: '1rem 0'}} />
-                     <table className="w-full text-sm">
-                        <thead>
-                            <tr style={{borderBottom: '1px dashed black'}}>
-                                <th className="text-left pb-2 font-bold">Item</th>
-                                <th className="text-center pb-2 font-bold">Qty</th>
-                                <th className="text-right pb-2 font-bold">Price</th>
-                                <th className="text-right pb-2 font-bold">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {finalItems.map((item, index) => (
-                                <tr key={`${item.menuItemId}-${index}`}>
-                                    <td className="pt-2 break-all">{item.name}</td>
-                                    <td className="text-center pt-2">{item.quantity}</td>
-                                    <td className="text-right pt-2 font-mono">{(item.price).toFixed(2)}</td>
-                                    <td className="text-right pt-2 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
+                        <hr style={{borderBottom: '1px dashed black', margin: '1rem 0'}} />
+                        <div className="text-xs">
+                            <p><strong>Bill No:</strong> {bill.id.slice(-6)}</p>
+                            <p><strong>Table:</strong> {bill.tableNumber}</p>
+                            <p><strong>Date:</strong> {format(new Date(bill.timestamp), "dd-MMM-yyyy hh:mm a")}</p>
+                        </div>
+                        <hr style={{borderBottom: '1px dashed black', margin: '1rem 0'}} />
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr style={{borderBottom: '1px dashed black'}}>
+                                    <th className="text-left pb-2 font-bold">Item</th>
+                                    <th className="text-center pb-2 font-bold">Qty</th>
+                                    <th className="text-right pb-2 font-bold">Price</th>
+                                    <th className="text-right pb-2 font-bold">Amount</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                     </table>
-                     <hr style={{borderBottom: '1px dashed black', margin: '1rem 0'}} />
-                     <div className="text-sm" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                        <div className="flex justify-between">
-                            <span>Subtotal</span>
-                            <span className="font-mono">₹{bill.subtotal.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Tax (10%)</span>
-                            <span className="font-mono">₹{bill.tax.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between font-bold" style={{fontSize: '1rem', marginTop: '0.25rem'}}>
-                            <span>Grand Total</span>
-                            <span className="font-mono">₹{bill.total.toFixed(2)}</span>
-                        </div>
-                     </div>
-                     <hr style={{borderBottom: '1px dashed black', margin: '1rem 0'}} />
-                      {!isPaid && (
-                        <div className="flex flex-col items-center gap-2 mt-4">
-                            <p className="text-xs font-bold">Scan to Pay</p>
-                            <div style={{background: 'white', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #ccc'}}>
-                                <QRCode value={upiUri} size={100} />
+                            </thead>
+                            <tbody>
+                                {finalItems.map((item, index) => (
+                                    <tr key={`${item.menuItemId}-${index}`}>
+                                        <td className="pt-2 break-all">{item.name}</td>
+                                        <td className="text-center pt-2">{item.quantity}</td>
+                                        <td className="text-right pt-2 font-mono">{(item.price).toFixed(2)}</td>
+                                        <td className="text-right pt-2 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <hr style={{borderBottom: '1px dashed black', margin: '1rem 0'}} />
+                        <div className="text-sm" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                            <div className="flex justify-between">
+                                <span>Subtotal</span>
+                                <span className="font-mono">₹{bill.subtotal.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Tax (10%)</span>
+                                <span className="font-mono">₹{bill.tax.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between font-bold" style={{fontSize: '1rem', marginTop: '0.25rem'}}>
+                                <span>Grand Total</span>
+                                <span className="font-mono">₹{bill.total.toFixed(2)}</span>
                             </div>
                         </div>
-                      )}
-                     <p className="text-center text-xs mt-4">Thank you for dining with us!</p>
+                        <hr style={{borderBottom: '1px dashed black', margin: '1rem 0'}} />
+                        {!isPaid && (
+                            <div className="flex flex-col items-center gap-2 mt-4">
+                                <p className="text-xs font-bold">Scan to Pay</p>
+                                <div style={{background: 'white', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #ccc'}}>
+                                    <QRCode value={upiUri} size={100} />
+                                </div>
+                            </div>
+                        )}
+                        <p className="text-center text-xs mt-4">Thank you for dining with us!</p>
+                    </div>
                 </div>
 
                 <div className="no-print">
@@ -347,5 +347,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
         </Dialog>
     );
 }
+
+    
 
     
