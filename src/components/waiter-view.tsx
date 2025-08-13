@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import BillingModal from './billing-modal';
+import { Separator } from './ui/separator';
 
 
 interface WaiterViewProps {
@@ -71,14 +72,19 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
      return tables.filter(table => table.status === 'available' || table.waiterId === selectedWaiter.id);
   }, [tables, selectedWaiter]);
 
-  const tablesToBill = useMemo(() => {
-    if (!selectedWaiter) return [];
+  const { tablesToBill, unpaidBills } = useMemo(() => {
+    if (!selectedWaiter) return { tablesToBill: [], unpaidBills: [] };
+    const waiterUnpaidBills = bills.filter(b => b.waiterId === selectedWaiter.id && b.status === 'unpaid');
+    
     const tableNumbersWithServedOrders = new Set(
         orders.filter(o => o.status === 'served' && o.waiterId === selectedWaiter.id).map(o => o.tableNumber)
     );
-    // Exclude tables that already have an unpaid bill
-    const tablesWithUnpaidBills = new Set(bills.filter(b => b.status === 'unpaid').map(b => b.tableNumber));
-    return Array.from(tableNumbersWithServedOrders).filter(tn => !tablesWithUnpaidBills.has(tn));
+    
+    const tablesWithUnpaidBills = new Set(waiterUnpaidBills.map(b => b.tableNumber));
+    
+    const readyForBill = Array.from(tableNumbersWithServedOrders).filter(tn => !tablesWithUnpaidBills.has(tn));
+
+    return { tablesToBill: readyForBill, unpaidBills: waiterUnpaidBills };
   }, [orders, bills, selectedWaiter]);
   
   const handleGenerateBill = async (tableNumber: number, waiterId: string) => {
@@ -87,6 +93,10 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
         setBillingModalState({ isOpen: true, bill: newBill });
     }
   }
+
+  const handleViewBill = (bill: Bill) => {
+    setBillingModalState({ isOpen: true, bill: bill });
+  };
 
   const handleCloseBillingModal = () => {
     setBillingModalState({ isOpen: false, bill: null });
@@ -213,6 +223,40 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
             </TabsContent>
 
             <TabsContent value="billing" className="mt-4 space-y-8">
+                 <div>
+                    <h3 className="text-xl font-headline font-semibold mb-4">Unpaid Bills</h3>
+                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {unpaidBills.length > 0 ? (
+                            unpaidBills.map(bill => (
+                                <Card key={bill.id} className="bg-amber-500/10 border-amber-500/20">
+                                    <CardHeader>
+                                        <CardTitle>Table {bill.tableNumber}</CardTitle>
+                                        <CardDescription>Unpaid Bill Total: <span className="font-bold font-mono">₹{bill.total.toFixed(2)}</span></CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Button className="w-full" variant="outline" onClick={() => handleViewBill(bill)}>
+                                            <FileText className="mr-2 h-4 w-4"/> View Bill
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            ))
+                        ) : (
+                             <div className="col-span-full text-center text-muted-foreground py-10">
+                                <Card className="border-dashed">
+                                    <CardHeader>
+                                        <CardTitle>No Unpaid Bills</CardTitle>
+                                        <CardDescription>
+                                        All generated bills have been paid.
+                                        </CardDescription>
+                                    </CardHeader>
+                                </Card>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <Separator />
+                
                 <div>
                     <h3 className="text-xl font-headline font-semibold mb-4">Tables Ready to Bill</h3>
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
