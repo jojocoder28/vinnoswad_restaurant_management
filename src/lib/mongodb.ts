@@ -3,7 +3,7 @@
 import { Db, MongoClient } from "mongodb";
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const DATABASE_NAME = "vinnoswad";
+const DATABASE_NAME = "eateryflow";
 
 if (!MONGODB_URI) {
   throw new Error(
