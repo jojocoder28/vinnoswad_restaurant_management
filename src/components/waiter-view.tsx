@@ -4,11 +4,13 @@
 import React, { useMemo, useState } from 'react';
 import type { Order, MenuItem, Waiter, OrderStatus, Table, DecodedToken } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Utensils } from 'lucide-react';
+import { PlusCircle, Utensils, ShieldAlert } from 'lucide-react';
 import OrderCard from './order-card';
 import OrderForm from './order-form';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
+
 
 interface WaiterViewProps {
   orders: Order[];
@@ -22,6 +24,8 @@ interface WaiterViewProps {
 
 export default function WaiterView({ orders, menuItems, waiters, tables, onUpdateStatus, onCreateOrder, currentUser }: WaiterViewProps) {
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState<{ orderId: string, status: OrderStatus, message: string } | null>(null);
+
   
   const selectedWaiter = useMemo(() => {
     return waiters.find(w => w.userId === currentUser.id);
@@ -48,6 +52,13 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
     return tables.filter(table => table.status === 'available' || table.waiterId === selectedWaiter.id);
   }, [tables, selectedWaiter]);
 
+  const handleConfirm = () => {
+    if (confirmation) {
+      onUpdateStatus(confirmation.orderId, confirmation.status);
+      setConfirmation(null);
+    }
+  };
+
 
   if (!selectedWaiter) {
     return (
@@ -63,6 +74,7 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
   }
 
   return (
+    <>
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <p>You are logged in as <span className="font-semibold">{selectedWaiter.name}</span>.</p>
@@ -88,7 +100,7 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
                         waiterName={selectedWaiter?.name || 'Unknown'}
                         actions={
                             order.status === 'ready' ? (
-                            <Button className="w-full" onClick={() => onUpdateStatus(order.id, 'served')}>
+                            <Button className="w-full" onClick={() => setConfirmation({ orderId: order.id, status: 'served', message: `This will mark the order for Table ${order.tableNumber} as served and complete the transaction.` })}>
                                 <Utensils className="mr-2 h-4 w-4"/> Mark as Served
                             </Button>
                             ) : null
@@ -146,5 +158,21 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
         tables={availableTables}
       />
     </div>
+
+     <AlertDialog open={!!confirmation} onOpenChange={(open) => !open && setConfirmation(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2"><ShieldAlert className="text-destructive"/>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    {confirmation?.message} This action cannot be easily undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setConfirmation(null)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirm}>Confirm</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

@@ -4,11 +4,13 @@
 import type { Order, MenuItem, OrderStatus, Waiter } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ChefHat, Bell, Utensils, Package, Clock } from 'lucide-react';
+import { CheckCircle, ChefHat, Bell, Utensils, Package, Clock, ShieldAlert } from 'lucide-react';
 import OrderCard from './order-card';
 import MenuManagement from './menu-management';
-import { useMemo } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
+import { useMemo, useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './ui/card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
+
 
 interface ManagerViewProps {
   orders: Order[];
@@ -42,6 +44,8 @@ export default function ManagerView({
   onDeleteMenuItem,
 }: ManagerViewProps) {
   
+  const [confirmation, setConfirmation] = useState<{ orderId: string, status: OrderStatus, message: string } | null>(null);
+
   const pendingOrders = useMemo(() => orders.filter(o => o.status === 'pending'), [orders]);
   const approvedOrders = useMemo(() => orders.filter(o => o.status === 'approved'), [orders]);
   const preparedOrders = useMemo(() => orders.filter(o => o.status === 'prepared'), [orders]);
@@ -68,8 +72,16 @@ export default function ManagerView({
     return { dailyItemsOrdered, dailyItemsServed };
   }, [orders]);
 
+  const handleConfirm = () => {
+    if (confirmation) {
+      onUpdateStatus(confirmation.orderId, confirmation.status);
+      setConfirmation(null);
+    }
+  };
+
 
   return (
+    <>
     <Tabs defaultValue="orders" className="w-full">
       <TabsList className="grid w-full grid-cols-2 md:w-fit">
         <TabsTrigger value="orders">Manage Orders</TabsTrigger>
@@ -100,7 +112,7 @@ export default function ManagerView({
                     <Button
                       variant="outline"
                       className="w-full bg-accent text-accent-foreground hover:bg-accent/90 border-accent"
-                      onClick={() => onUpdateStatus(order.id, 'approved')}
+                      onClick={() => setConfirmation({ orderId: order.id, status: 'approved', message: `This will send the order for Table ${order.tableNumber} to the kitchen.` })}
                     >
                       <CheckCircle className="mr-2 h-4 w-4" /> Approve for Kitchen
                     </Button>
@@ -108,7 +120,12 @@ export default function ManagerView({
                 />
               ))
             ) : (
-                <p className="col-span-full text-muted-foreground">No orders waiting for approval.</p>
+                <Card className="col-span-full border-dashed">
+                    <CardHeader className="text-center">
+                        <CardTitle>No Pending Orders</CardTitle>
+                        <CardDescription>There are no orders waiting for approval.</CardDescription>
+                    </CardHeader>
+                </Card>
             )}
           </div>
         </div>
@@ -124,14 +141,19 @@ export default function ManagerView({
                   menuItems={menuItems}
                   waiterName={getWaiterName(order.waiterId)}
                   actions={
-                     <Button className="w-full" onClick={() => onUpdateStatus(order.id, 'ready')}>
+                     <Button className="w-full" onClick={() => setConfirmation({ orderId: order.id, status: 'ready', message: `This will notify ${getWaiterName(order.waiterId)} to pick up the order for Table ${order.tableNumber}.` })}>
                         <Bell className="mr-2 h-4 w-4" /> Notify Waiter
                       </Button>
                   }
                 />
               ))
             ) : (
-              <p className="col-span-full text-muted-foreground">No orders are ready for pickup from the kitchen.</p>
+                <Card className="col-span-full border-dashed">
+                    <CardHeader className="text-center">
+                        <CardTitle>No Orders Ready</CardTitle>
+                        <CardDescription>No orders are ready for pickup from the kitchen.</CardDescription>
+                    </CardHeader>
+                </Card>
             )}
           </div>
         </div>
@@ -150,7 +172,12 @@ export default function ManagerView({
                 />
               ))
             ) : (
-                <p className="col-span-full text-muted-foreground">No orders are currently in the kitchen.</p>
+                <Card className="col-span-full border-dashed">
+                    <CardHeader className="text-center">
+                        <CardTitle>Kitchen is Clear</CardTitle>
+                        <CardDescription>No orders are currently in the kitchen.</CardDescription>
+                    </CardHeader>
+                </Card>
             )}
           </div>
         </div>
@@ -168,7 +195,12 @@ export default function ManagerView({
                 />
               ))
             ) : (
-                <p className="col-span-full text-muted-foreground">No orders are currently waiting to be served.</p>
+                <Card className="col-span-full border-dashed">
+                    <CardHeader className="text-center">
+                        <CardTitle>All Orders Picked Up</CardTitle>
+                        <CardDescription>No orders are currently waiting to be served.</CardDescription>
+                    </CardHeader>
+                </Card>
             )}
           </div>
         </div>
@@ -182,5 +214,21 @@ export default function ManagerView({
         />
       </TabsContent>
     </Tabs>
+
+     <AlertDialog open={!!confirmation} onOpenChange={(open) => !open && setConfirmation(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2"><ShieldAlert className="text-destructive"/>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    {confirmation?.message} This action cannot be easily undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setConfirmation(null)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirm}>Confirm</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

@@ -3,10 +3,12 @@
 
 import type { Order, MenuItem, OrderStatus, Waiter } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { ChefHat } from 'lucide-react';
+import { ChefHat, ShieldAlert } from 'lucide-react';
 import OrderCard from './order-card';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
+
 
 interface KitchenViewProps {
   orders: Order[];
@@ -21,6 +23,8 @@ export default function KitchenView({
   waiters,
   onUpdateStatus,
 }: KitchenViewProps) {
+
+  const [confirmation, setConfirmation] = useState<{ orderId: string, status: OrderStatus, message: string } | null>(null);
   
   const approvedOrders = useMemo(() => orders.filter(o => o.status === 'approved'), [orders]);
   
@@ -28,7 +32,15 @@ export default function KitchenView({
     return waiters.find(w => w.id === waiterId)?.name || 'Unknown';
   }
 
+  const handleConfirm = () => {
+    if (confirmation) {
+      onUpdateStatus(confirmation.orderId, confirmation.status);
+      setConfirmation(null);
+    }
+  };
+
   return (
+    <>
     <div className="w-full mt-6 space-y-6">
         <div>
           <h3 className="text-xl font-headline font-semibold mb-4">New Orders</h3>
@@ -43,7 +55,7 @@ export default function KitchenView({
                   actions={
                     <Button
                       className="w-full"
-                      onClick={() => onUpdateStatus(order.id, 'prepared')}
+                      onClick={() => setConfirmation({ orderId: order.id, status: 'prepared', message: `This will mark the order for Table ${order.tableNumber} as prepared and ready for pickup.` })}
                     >
                       <ChefHat className="mr-2 h-4 w-4" /> Mark as Prepared
                     </Button>
@@ -65,5 +77,21 @@ export default function KitchenView({
           </div>
         </div>
     </div>
+
+    <AlertDialog open={!!confirmation} onOpenChange={(open) => !open && setConfirmation(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2"><ShieldAlert className="text-destructive"/>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    {confirmation?.message} This action cannot be easily undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setConfirmation(null)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirm}>Confirm</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
