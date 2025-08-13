@@ -108,7 +108,7 @@ export default function PurchaseOrderForm({ isOpen, onClose, onSave, suppliers, 
               )}
             />
             
-            <div className="space-y-4">
+            <div className="space-y-2">
               <FormLabel>Items to Order</FormLabel>
               <ScrollArea className="h-60 pr-4">
               <div className="space-y-4">
