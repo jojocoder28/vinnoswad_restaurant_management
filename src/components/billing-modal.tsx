@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Check, IndianRupee, Loader2, Printer } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { useState } from 'react';
-import { createRazorpayOrder, verifyRazorpayPayment } from '@/app/actions';
+import { createRazorpayOrder, verifyRazorpayPayment, markBillAsPaid } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import QRCode from "react-qr-code";
 import Logo from './logo';
@@ -172,36 +172,36 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                      <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-dashed border-black">
-                                <th className="text-left pb-2">Item</th>
-                                <th className="text-center pb-2">Qty</th>
-                                <th className="text-right pb-2">Price</th>
-                                <th className="text-right pb-2">Amount</th>
+                                <th className="text-left pb-2 font-semibold">Item</th>
+                                <th className="text-center pb-2 font-semibold">Qty</th>
+                                <th className="text-right pb-2 font-semibold">Price</th>
+                                <th className="text-right pb-2 font-semibold">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
                             {finalItems.map((item, index) => (
                                 <tr key={`${item.menuItemId}-${index}`}>
-                                    <td className="pt-2">{item.name}</td>
+                                    <td className="pt-2" style={{ wordBreak: 'break-word' }}>{item.name}</td>
                                     <td className="text-center pt-2">{item.quantity}</td>
-                                    <td className="text-right pt-2">{item.price.toFixed(2)}</td>
-                                    <td className="text-right pt-2">{(item.price * item.quantity).toFixed(2)}</td>
+                                    <td className="text-right pt-2 font-mono">{(item.price).toFixed(2)}</td>
+                                    <td className="text-right pt-2 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
                                 </tr>
                             ))}
                         </tbody>
                      </table>
                      <Separator className="my-4 border-dashed border-black" />
-                     <div className="text-sm space-y-1">
+                     <div className="text-sm space-y-2">
                         <div className="flex justify-between">
                             <span>Subtotal</span>
-                            <span>{bill.subtotal.toFixed(2)}</span>
+                            <span className="font-mono">₹{bill.subtotal.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Tax (10%)</span>
-                            <span>{bill.tax.toFixed(2)}</span>
+                            <span className="font-mono">₹{bill.tax.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between font-bold text-base">
+                        <div className="flex justify-between font-bold text-base mt-1">
                             <span>Grand Total</span>
-                            <span>₹{bill.total.toFixed(2)}</span>
+                            <span className="font-mono">₹{bill.total.toFixed(2)}</span>
                         </div>
                      </div>
                      <Separator className="my-4 border-dashed border-black" />
@@ -218,7 +218,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                     
                     <Separator className="my-4" />
                     
-                    <div className="text-sm space-y-1 my-4">
+                    <div className="text-sm space-y-2 my-4">
                         <h4 className="font-semibold mb-2">Order Summary:</h4>
                         {finalItems.map((item, index) => (
                             <div key={`${item.menuItemId}-${index}`} className="flex justify-between">
@@ -230,7 +230,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
 
                     <Separator className="my-4"/>
                     
-                    <div className="space-y-1 my-4 text-sm">
+                    <div className="space-y-2 my-4 text-sm">
                         <div className="flex justify-between">
                             <span>Subtotal</span>
                             <span className="font-mono">₹{bill.subtotal.toFixed(2)}</span>
@@ -239,14 +239,14 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                             <span>Tax (10%)</span>
                             <span className="font-mono">₹{bill.tax.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between font-bold text-base">
+                        <div className="flex justify-between font-bold text-base mt-1">
                             <span>Total</span>
                             <span className="font-mono">₹{bill.total.toFixed(2)}</span>
                         </div>
                     </div>
 
                     {!isRazorpayConfigured && (
-                        <div className="flex flex-col items-center gap-4">
+                        <div className="flex flex-col items-center gap-4 my-6">
                             <Alert>
                                 <AlertTitle>Pay with any UPI App</AlertTitle>
                                 <AlertDescription>
@@ -259,23 +259,24 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                         </div>
                     )}
 
-                    <DialogFooter className="mt-4 gap-2 sm:gap-0">
+                    <DialogFooter className="mt-6 flex-col sm:flex-row sm:justify-between gap-2">
                         <Button type="button" variant="outline" onClick={handlePrint} disabled={loading}>
                             <Printer className="mr-2 h-4 w-4"/> Print Bill
                         </Button>
-                        <div className="flex-grow"></div>
-                        <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>Close</Button>
-                        {isRazorpayConfigured ? (
-                            <Button type="button" onClick={handleRazorpayPayment} disabled={loading}>
-                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <IndianRupee className="mr-2 h-4 w-4"/>}
-                                {loading ? 'Processing...' : 'Pay with Razorpay'}
-                            </Button>
-                        ) : (
-                            <Button type="button" onClick={handleManualPayment} disabled={loading}>
-                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4"/>}
-                                {loading ? 'Confirming...' : 'Confirm Cash/Manual Payment'}
-                            </Button>
-                        )}
+                        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                            <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>Close</Button>
+                            {isRazorpayConfigured ? (
+                                <Button type="button" onClick={handleRazorpayPayment} disabled={loading}>
+                                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <IndianRupee className="mr-2 h-4 w-4"/>}
+                                    {loading ? 'Processing...' : 'Pay with Razorpay'}
+                                </Button>
+                            ) : (
+                                <Button type="button" onClick={handleManualPayment} disabled={loading}>
+                                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4"/>}
+                                    {loading ? 'Confirming...' : 'Confirm Cash/Manual Payment'}
+                                </Button>
+                            )}
+                        </div>
                     </DialogFooter>
                 </div>
             </DialogContent>
