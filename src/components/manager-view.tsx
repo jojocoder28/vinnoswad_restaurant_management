@@ -205,7 +205,7 @@ export default function ManagerView({
   return (
     <>
     <Tabs defaultValue="orders" className="w-full">
-      <TabsList className="grid w-full grid-cols-5 md:w-fit">
+      <TabsList>
         <TabsTrigger value="orders">Manage Orders</TabsTrigger>
         <TabsTrigger value="menu">Manage Menu</TabsTrigger>
         <TabsTrigger value="billing">Billing</TabsTrigger>
