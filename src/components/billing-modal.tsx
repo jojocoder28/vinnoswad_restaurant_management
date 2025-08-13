@@ -159,7 +159,8 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                     <div className="flex flex-col items-center text-center">
                         <Logo className="w-16 h-16"/>
                         <h2 className="font-bold text-xl mt-2">Vinnoswad Restaurant</h2>
-                        <p className="text-sm">123 Culinary Lane, Foodie City, 12345</p>
+                        <p className="text-sm">117-NH, Sarisha Ashram More, Diamond Harbour</p>
+                        <p className="text-sm">South 24 Parganas, PIN - 743368, WB, INDIA</p>
                         <p className="text-sm">GSTIN: 29GGGGG1314G1Z4</p>
                     </div>
                     <Separator className="my-4 border-dashed border-black" />
