@@ -25,7 +25,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
         return null;
     }
     
-    const upiString = `upi://pay?pa=${YOUR_UPI_ID}&pn=EateryFlow&am=${bill.total.toFixed(2)}&cu=INR&tn=Bill for Table ${bill.tableNumber}`;
+    const upiString = `upi://pay?pa=${YOUR_UPI_ID}&pn=Vinnoswad&am=${bill.total.toFixed(2)}&cu=INR&tn=Bill for Table ${bill.tableNumber}`;
     const allItems = orders.flatMap(order => order.items);
 
     return (

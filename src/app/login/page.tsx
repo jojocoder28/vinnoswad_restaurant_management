@@ -71,7 +71,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <header className="mb-8 flex flex-col items-center text-center gap-4">
         <Logo />
-        <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">EateryFlow</h1>
+        <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Vinnoswad</h1>
         <p className="text-muted-foreground">Streamlined order management for restaurants.</p>
       </header>
 
@@ -79,7 +79,7 @@ export default function LoginPage() {
           <Terminal className="h-4 w-4" />
           <AlertTitle>Demo Accounts</AlertTitle>
           <AlertDescription>
-           <div className="text-xs">Use <span className="font-semibold">admin@eatery.com</span>, <span className="font-semibold">manager@eatery.com</span>, or <span className="font-semibold">arjun@eatery.com</span> with password <span className="font-mono text-primary bg-primary/10 px-1 rounded">123456</span> to log in.</div>
+           <div className="text-xs">Use <span className="font-semibold">admin@vinnoswad.com</span>, <span className="font-semibold">manager@vinnoswad.com</span>, or <span className="font-semibold">arjun@vinnoswad.com</span> with password <span className="font-mono text-primary bg-primary/10 px-1 rounded">123456</span> to log in.</div>
           </AlertDescription>
       </Alert>
 

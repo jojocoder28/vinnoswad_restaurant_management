@@ -27,7 +27,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
         <header className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Logo />
-            <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">EateryFlow</h1>
+            <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Vinnoswad</h1>
           </div>
           <div className='flex items-center gap-4'>
             {user && (

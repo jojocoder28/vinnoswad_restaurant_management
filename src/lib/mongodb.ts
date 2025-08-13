@@ -1,8 +1,9 @@
+
 "use server"
 import { Db, MongoClient } from "mongodb";
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const DATABASE_NAME = "eateryflow";
+const DATABASE_NAME = "vinnoswad";
 
 if (!MONGODB_URI) {
   throw new Error(

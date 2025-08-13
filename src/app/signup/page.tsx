@@ -82,12 +82,12 @@ export default function SignupPage() {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
        <header className="mb-8 flex flex-col items-center text-center gap-4">
         <Logo />
-        <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">EateryFlow</h1>
+        <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Vinnoswad</h1>
       </header>
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="font-headline text-2xl">Create an Account</CardTitle>
-          <CardDescription>Join EateryFlow to manage your restaurant.</CardDescription>
+          <CardDescription>Join Vinnoswad to manage your restaurant.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
