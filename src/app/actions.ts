@@ -18,7 +18,7 @@ async function getCollection<T extends { id?: string }>(collectionName: string):
 async function seedCollection<T extends { id?: string }>(collectionName: string, data: T[]) {
     const collection = await getCollection(collectionName);
     const count = await collection.countDocuments();
-    if (count === 0) {
+    if (count === 0 && data.length > 0) {
         // We are dropping the ID from the mock data, and letting Mongo create it
         const documents = data.map(({ id, ...rest }) => rest);
         await collection.insertMany(documents as any[]);
