@@ -4,7 +4,7 @@
 import React, { useMemo, useState } from 'react';
 import type { Order, MenuItem, Waiter, OrderStatus, Table, DecodedToken, OrderItem, Bill } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Utensils, ShieldAlert, FileText, Check, MoreHorizontal, FilePenLine, XCircle } from 'lucide-react';
+import { PlusCircle, Utensils, ShieldAlert, FileText, Check, MoreHorizontal, FilePenLine, XCircle, Printer } from 'lucide-react';
 import OrderCard from './order-card';
 import OrderForm from './order-form';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -104,8 +104,6 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
 
   const handlePayBillFromModal = (billId: string) => {
     onPayBill(billId);
-    // We keep the modal open to allow printing the 'PAID' receipt.
-    // The user can close it manually.
   }
 
 
@@ -130,7 +128,22 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
     setIsOrderFormOpen(true);
   }
   
-  const renderOrderActions = (order: Order) => {
+  const renderOrderActions = (order: Order, isHistory: boolean = false) => {
+    
+    if (isHistory) {
+        if (order.status === 'billed') {
+            const relatedBill = bills.find(b => b.orderIds.includes(order.id));
+            if(relatedBill) {
+                return (
+                    <Button variant="outline" className="w-full" onClick={() => handleViewBill(relatedBill)}>
+                        <Printer className="mr-2 h-4 w-4" /> Print Receipt
+                    </Button>
+                )
+            }
+        }
+        return null;
+    }
+
     const actions: React.ReactNode[] = [];
     if (order.status === 'pending') {
         actions.push(
@@ -300,6 +313,7 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
                             order={order}
                             menuItems={menuItems}
                             waiterName={selectedWaiter?.name || 'Unknown'}
+                            actions={renderOrderActions(order, true)}
                         />
                     ))
                     ) : (
