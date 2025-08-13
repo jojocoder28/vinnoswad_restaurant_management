@@ -78,22 +78,37 @@ export default function ReportGenerator() {
 
             // Create and download CSVs for each data type
             if (reportData.data.orders.length > 0) {
-                const ordersCSV = toCSV(reportData.data.orders, Object.keys(reportData.data.orders[0]));
-                downloadCSV(ordersCSV, `orders_${fileSuffix}.csv`);
+                // Flatten the items for better CSV readability
+                const flatOrders = reportData.data.orders.flatMap(order => 
+                    order.items.map(item => ({
+                        orderId: order.id,
+                        tableNumber: order.tableNumber,
+                        waiterName: order.waiterName,
+                        status: order.status,
+                        timestamp: order.timestamp,
+                        cancellationReason: order.cancellationReason || '',
+                        itemName: item.itemName,
+                        quantity: item.quantity,
+                        price: item.price,
+                        total: item.price * item.quantity
+                    }))
+                );
+                const ordersCSV = toCSV(flatOrders, ['orderId', 'tableNumber', 'waiterName', 'status', 'timestamp', 'cancellationReason', 'itemName', 'quantity', 'price', 'total']);
+                downloadCSV(ordersCSV, `orders_report_${fileSuffix}.csv`);
             }
             if (reportData.data.bills.length > 0) {
                 const billsCSV = toCSV(reportData.data.bills, Object.keys(reportData.data.bills[0]));
-                downloadCSV(billsCSV, `bills_${fileSuffix}.csv`);
+                downloadCSV(billsCSV, `bills_report_${fileSuffix}.csv`);
             }
             if (reportData.data.users.length > 0) {
                 const usersCSV = toCSV(reportData.data.users, Object.keys(reportData.data.users[0]));
-                downloadCSV(usersCSV, `users_${fileSuffix}.csv`);
+                downloadCSV(usersCSV, `users_report_${fileSuffix}.csv`);
             }
             
             // Create a summary CSV
             const summaryData = [{...reportData.summary, ...reportData.reportPeriod}];
             const summaryCSV = toCSV(summaryData, Object.keys(summaryData[0]));
-            downloadCSV(summaryCSV, `summary_${fileSuffix}.csv`);
+            downloadCSV(summaryCSV, `summary_report_${fileSuffix}.csv`);
             
             toast({
                 title: "Report Generated",

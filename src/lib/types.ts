@@ -71,7 +71,16 @@ export interface DecodedToken {
   exp: number;
 }
 
-// Reports
+// Report-specific types
+export interface OrderReportItem extends OrderItem {
+  itemName: string;
+}
+
+export interface OrderReport extends Omit<Order, 'items' | 'waiterId'> {
+  waiterName: string;
+  items: OrderReportItem[];
+}
+
 export interface ReportData {
   reportPeriod: {
     start: string;
@@ -87,10 +96,10 @@ export interface ReportData {
     totalMenuItems: number;
   };
   data: {
-    orders: Omit<Order, 'id'>[];
-    bills: Omit<Bill, 'id'>[];
+    orders: OrderReport[];
+    bills: Bill[];
     users: Omit<User, 'id' | 'password'>[];
-    menuItems: Omit<MenuItem, 'id'>[];
-    waiters: Omit<Waiter, 'id'>[];
+    menuItems: MenuItem[];
+    waiters: Waiter[];
   }
 }

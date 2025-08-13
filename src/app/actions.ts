@@ -4,7 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/mongodb';
 import { initialMenuItems, initialOrders, initialWaiters, initialTables, initialUsers } from '@/lib/mock-data';
-import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus, OrderItem, Bill, BillStatus, ReportData } from '@/lib/types';
+import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus, OrderItem, Bill, BillStatus, ReportData, OrderReport } from '@/lib/types';
 import { Collection, ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
@@ -481,6 +481,21 @@ export async function getReportData(startDate: string, endDate: string): Promise
     
     // Sanitize user data (remove passwords)
     const sanitizedUsers = users.map(({ password, ...user }) => user);
+    
+    // Create name maps for easier lookup
+    const waiterNameMap = new Map(waiters.map(w => [w.id, w.name]));
+    const menuItemNameMap = new Map(menuItems.map(m => [m.id, m.name]));
+
+    const transformedOrders: OrderReport[] = filteredOrders.map(order => {
+        return {
+            ...order,
+            waiterName: waiterNameMap.get(order.waiterId) || 'Unknown Waiter',
+            items: order.items.map(item => ({
+                ...item,
+                itemName: menuItemNameMap.get(item.menuItemId) || 'Unknown Item',
+            }))
+        }
+    });
 
     return {
         reportPeriod: {
@@ -497,8 +512,8 @@ export async function getReportData(startDate: string, endDate: string): Promise
             totalMenuItems: menuItems.length,
         },
         data: {
-            orders: filteredOrders,
-            bills: filteredBills,
+            orders: transformedOrders,
+            bills,
             users: sanitizedUsers,
             menuItems,
             waiters,
