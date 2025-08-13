@@ -7,17 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Check, IndianRupee, Loader2, Printer } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createRazorpayOrder, verifyRazorpayPayment, markBillAsPaid } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import QRCode from "react-qr-code";
 import Logo from './logo';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 declare const Razorpay: any;
 
 // Fallback UPI ID if Razorpay is not configured. Loaded from environment variables.
-const FALLBACK_UPI_ID = process.env.NEXT_PUBLIC_FALLBACK_UPI_ID || "your-upi-id@example";
+const FALLBACK_UPI_ID = process.env.NEXT_PUBLIC_FALLBACK_UPI_ID || "dasjojo7-1@okicici";
 
 
 interface BillingModalProps {
@@ -32,10 +33,18 @@ interface BillingModalProps {
 
 export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders, menuItems, currentUser }: BillingModalProps) {
     const [loading, setLoading] = useState(false);
+    const [isPaid, setIsPaid] = useState(false);
     const { toast } = useToast();
     
     // Check if Razorpay is configured
     const isRazorpayConfigured = !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
+    // Reset paid state when a new bill is opened
+    useEffect(() => {
+        if (bill) {
+            setIsPaid(bill.status === 'paid');
+        }
+    }, [bill]);
 
     // Consolidate all items from the billed orders for display.
     const allItems = orders.flatMap(order => 
@@ -60,6 +69,13 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
     }, new Map<string, typeof allItems[0]>());
     
     const finalItems = Array.from(groupedItems.values());
+
+    const handleSuccessfulPayment = () => {
+        if (!bill) return;
+        onPayBill(bill.id);
+        setIsPaid(true);
+        setLoading(false);
+    };
 
     const handleRazorpayPayment = async () => {
         if (!bill) return;
@@ -89,13 +105,13 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                             razorpay_signature: response.razorpay_signature,
                         });
                         
-                        // 4. If verification is successful, onPayBill is called automatically by the server action
                         toast({ title: "Payment Successful!", description: "The bill has been marked as paid." });
-                        onClose();
+                        handleSuccessfulPayment();
 
                     } catch (verifyError) {
                          const errorMessage = verifyError instanceof Error ? verifyError.message : "Payment verification failed.";
                          toast({ title: "Verification Failed", description: errorMessage, variant: "destructive" });
+                         setLoading(false);
                     }
                 },
                 prefill: {
@@ -119,6 +135,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                     description: response.error.description || "The payment could not be completed.",
                     variant: "destructive"
                 });
+                setLoading(false);
             });
             rzp.open();
 
@@ -129,7 +146,6 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                 description: errorMessage,
                 variant: "destructive"
             });
-        } finally {
             setLoading(false);
         }
     }
@@ -137,14 +153,12 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
     const handleManualPayment = () => {
         if (!bill) return;
         setLoading(true);
-        onPayBill(bill.id);
-        setLoading(false);
+        handleSuccessfulPayment();
     }
     
     const handlePrint = () => {
         window.print();
     }
-
 
     if (!isOpen || !bill) {
         return null;
@@ -155,7 +169,14 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="sm:max-w-lg print:max-w-none print:border-none print:shadow-none">
-                 <div id="printable-bill" className="hidden print:block text-black">
+                 <div id="printable-bill" className="hidden print:block text-black relative">
+                    {isPaid && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-8xl font-bold text-green-500/30 border-4 border-green-500/30 rounded-lg p-8 transform -rotate-12">
+                                PAID
+                            </span>
+                        </div>
+                    )}
                     <div className="flex flex-col items-center text-center">
                         <Logo className="w-16 h-16"/>
                         <h2 className="font-bold text-xl mt-2">Vinnoswad Restaurant</h2>
@@ -182,7 +203,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                         <tbody>
                             {finalItems.map((item, index) => (
                                 <tr key={`${item.menuItemId}-${index}`}>
-                                    <td className="pt-2" style={{ wordBreak: 'break-word' }}>{item.name}</td>
+                                    <td className="pt-2" style={{ wordBreak: 'break-all' }}>{item.name}</td>
                                     <td className="text-center pt-2">{item.quantity}</td>
                                     <td className="text-right pt-2 font-mono">{(item.price).toFixed(2)}</td>
                                     <td className="text-right pt-2 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
@@ -206,6 +227,14 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                         </div>
                      </div>
                      <Separator className="my-4 border-dashed border-black" />
+                      {!isPaid && (
+                        <div className="flex flex-col items-center gap-2 mt-4">
+                            <p className="text-xs font-semibold">Scan to Pay</p>
+                            <div className="bg-white p-2 rounded-md border">
+                                <QRCode value={upiUri} size={100} />
+                            </div>
+                        </div>
+                      )}
                      <p className="text-center text-xs mt-4">Thank you for dining with us!</p>
                 </div>
 
@@ -217,61 +246,76 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                         </DialogDescription>
                     </DialogHeader>
                     
-                    <Separator className="my-4" />
-                    
-                    <div className="text-sm space-y-2 my-4">
-                        <h4 className="font-semibold mb-2">Order Summary:</h4>
-                        {finalItems.map((item, index) => (
-                            <div key={`${item.menuItemId}-${index}`} className="flex justify-between">
-                                <span>{item.quantity}x {item.name}</span>
-                                <span className="font-mono">₹{(item.price * item.quantity).toFixed(2)}</span>
+                    <div className="relative">
+                        {isPaid && (
+                             <div className="absolute inset-0 flex items-center justify-center z-10">
+                                <span className="text-8xl font-bold text-green-500/20 border-4 border-green-500/20 rounded-lg p-8 transform -rotate-12">
+                                    PAID
+                                </span>
                             </div>
-                        ))}
-                    </div>
-
-                    <Separator className="my-4"/>
-                    
-                    <div className="space-y-2 my-4 text-sm">
-                        <div className="flex justify-between">
-                            <span>Subtotal</span>
-                            <span className="font-mono">₹{bill.subtotal.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Tax (10%)</span>
-                            <span className="font-mono">₹{bill.tax.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between font-bold text-base mt-1">
-                            <span>Total</span>
-                            <span className="font-mono">₹{bill.total.toFixed(2)}</span>
-                        </div>
-                    </div>
-
-                    {!isRazorpayConfigured && (
-                        <div className="flex flex-col items-center gap-4 my-6">
-                            <Alert>
-                                <AlertTitle>Pay with any UPI App</AlertTitle>
-                                <AlertDescription>
-                                    Scan the QR code with your phone to pay the bill amount.
-                                </AlertDescription>
-                            </Alert>
-                            <div className="bg-white p-4 rounded-md">
-                                <QRCode value={upiUri} size={200} />
+                        )}
+                        <div className={cn("space-y-4 my-4", isPaid && "opacity-50")}>
+                            <Separator />
+                            <div className="text-sm space-y-2">
+                                <h4 className="font-semibold mb-2">Order Summary:</h4>
+                                {finalItems.map((item, index) => (
+                                    <div key={`${item.menuItemId}-${index}`} className="flex justify-between">
+                                        <span>{item.quantity}x {item.name}</span>
+                                        <span className="font-mono">₹{(item.price * item.quantity).toFixed(2)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <Separator />
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span>Subtotal</span>
+                                    <span className="font-mono">₹{bill.subtotal.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Tax (10%)</span>
+                                    <span className="font-mono">₹{bill.tax.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between font-bold text-base mt-1">
+                                    <span>Total</span>
+                                    <span className="font-mono">₹{bill.total.toFixed(2)}</span>
+                                </div>
                             </div>
                         </div>
+                    </div>
+
+
+                    {!isPaid && (
+                        <>
+                            {isRazorpayConfigured ? (
+                                <div className="mt-6">
+                                     <Button type="button" onClick={handleRazorpayPayment} disabled={loading} className="w-full">
+                                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <IndianRupee className="mr-2 h-4 w-4"/>}
+                                        {loading ? 'Processing...' : 'Pay with Razorpay'}
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center gap-4 my-6">
+                                    <Alert>
+                                        <AlertTitle>Pay with any UPI App</AlertTitle>
+                                        <AlertDescription>
+                                            Scan the QR code with your phone to pay the bill amount.
+                                        </AlertDescription>
+                                    </Alert>
+                                    <div className="bg-white p-4 rounded-md">
+                                        <QRCode value={upiUri} size={200} />
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
 
                     <DialogFooter className="mt-6 flex-col sm:flex-row sm:justify-between gap-2">
                         <Button type="button" variant="outline" onClick={handlePrint} disabled={loading}>
-                            <Printer className="mr-2 h-4 w-4"/> Print Bill
+                            <Printer className="mr-2 h-4 w-4"/> {isPaid ? 'Print Paid Receipt' : 'Print Bill'}
                         </Button>
                         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
                             <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>Close</Button>
-                            {isRazorpayConfigured ? (
-                                <Button type="button" onClick={handleRazorpayPayment} disabled={loading}>
-                                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <IndianRupee className="mr-2 h-4 w-4"/>}
-                                    {loading ? 'Processing...' : 'Pay with Razorpay'}
-                                </Button>
-                            ) : (
+                            {!isRazorpayConfigured && !isPaid && (
                                 <Button type="button" onClick={handleManualPayment} disabled={loading}>
                                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4"/>}
                                     {loading ? 'Confirming...' : 'Confirm Cash/Manual Payment'}
@@ -284,3 +328,4 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
         </Dialog>
     );
 }
+
