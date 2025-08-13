@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { loginUser, seedDatabase } from '../actions';
+import { loginUser } from '../actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,7 +38,6 @@ export default function LoginPage() {
   const handleLogin = async (values: z.infer<typeof loginSchema>) => {
     setLoading(true);
     try {
-        await seedDatabase();
         const result = await loginUser(values.email, values.password);
         if (result.success && result.user) {
             toast({
@@ -77,9 +76,9 @@ export default function LoginPage() {
 
       <Alert className="max-w-sm mb-4">
           <Terminal className="h-4 w-4" />
-          <AlertTitle>Demo Accounts</AlertTitle>
+          <AlertTitle>First time setup</AlertTitle>
           <AlertDescription>
-           <div className="text-xs">Use <span className="font-semibold">admin@vinnoswad.com</span>, <span className="font-semibold">manager@vinnoswad.com</span>, or <span className="font-semibold">arjun@vinnoswad.com</span> with password <span className="font-mono text-primary bg-primary/10 px-1 rounded">123456</span> to log in.</div>
+           <div className="text-xs">There are no users in the database. The first account you create will automatically become the admin. Please <Link href="/signup" className="underline font-bold">sign up</Link> to get started.</div>
           </AlertDescription>
       </Alert>
 

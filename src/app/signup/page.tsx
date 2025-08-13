@@ -16,6 +16,8 @@ import Logo from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import type { UserRole } from '@/lib/types';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Terminal } from 'lucide-react';
 
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -26,6 +28,7 @@ const signupSchema = z.object({
 
 export default function SignupPage() {
   const [loading, setLoading] = useState(false);
+  const [isFirstUser, setIsFirstUser] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -47,7 +50,12 @@ export default function SignupPage() {
       });
 
       if (result.success) {
-        if(result.pending){
+        if(result.isFirstUser) {
+          toast({
+              title: "Admin Account Created!",
+              description: "You are the first user, so you have been made an administrator.",
+          });
+        } else if(result.pending){
             toast({
                 title: "Registration Submitted",
                 description: "Your account has been created and is pending admin approval.",
@@ -84,6 +92,13 @@ export default function SignupPage() {
         <Logo />
         <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Vinnoswad</h1>
       </header>
+       <Alert className="max-w-sm mb-4">
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>Admin Registration</AlertTitle>
+          <AlertDescription>
+           <div className="text-xs">The first user to sign up will automatically be granted <span className="font-bold">admin</span> privileges. The role selected below will be ignored for the first user.</div>
+          </AlertDescription>
+      </Alert>
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="font-headline text-2xl">Create an Account</CardTitle>

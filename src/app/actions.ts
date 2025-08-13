@@ -3,7 +3,6 @@
 
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/mongodb';
-import { initialMenuItems, initialOrders, initialWaiters, initialTables, initialUsers } from '@/lib/mock-data';
 import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus, OrderItem, Bill, BillStatus, ReportData, OrderReport, Supplier, StockItem, PurchaseOrder, PurchaseStatus } from '@/lib/types';
 import { Collection, ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
@@ -13,42 +12,6 @@ import { encrypt, getSession } from '@/lib/auth';
 async function getCollection<T extends { id?: string }>(collectionName: string): Promise<Collection<Omit<T, 'id'>>> {
     const { db } = await connectToDatabase();
     return db.collection<Omit<T, 'id'>>(collectionName);
-}
-
-async function seedCollection<T extends { id?: string }>(collectionName: string, data: T[]) {
-    const collection = await getCollection(collectionName);
-    const count = await collection.countDocuments();
-    if (count === 0 && data.length > 0) {
-        // We are dropping the ID from the mock data, and letting Mongo create it
-        const documents = data.map(({ id, ...rest }) => rest);
-        if (documents.length > 0) {
-           await collection.insertMany(documents as any[]);
-        }
-    }
-}
-
-export async function seedDatabase() {
-    await seedCollection('menu', initialMenuItems);
-    
-    // Seed users and then link waiters to them
-    const usersCollection = await getCollection<User>('users');
-    const usersCount = await usersCollection.countDocuments();
-    if (usersCount === 0) {
-        await usersCollection.insertMany(initialUsers as any[]);
-        const waitersCollection = await getCollection<Waiter>('waiters');
-        const users = await usersCollection.find({ role: 'waiter', status: 'approved' }).toArray();
-
-        const waitersToInsert = users.map(user => ({
-            name: user.name,
-            userId: user._id.toHexString()
-        }));
-        if(waitersToInsert.length > 0){
-             await waitersCollection.insertMany(waitersToInsert as any[]);
-        }
-    }
-    
-    await seedCollection('orders', initialOrders);
-    await seedCollection('tables', initialTables);
 }
 
 function mapId<T>(document: any): T {
@@ -68,7 +31,12 @@ export async function registerUser(userData: Omit<User, 'id' | 'status'>, isAdmi
     const hashedPassword = await bcrypt.hash(userData.password!, 10);
     
     let status: UserStatus;
-    if (isAdminCreating) {
+    // The first user registered should be an admin
+    const userCount = await usersCollection.countDocuments();
+    if (userCount === 0) {
+        status = 'approved';
+        userData.role = 'admin';
+    } else if (isAdminCreating) {
         status = 'approved';
     } else {
         status = (userData.role === 'manager' || userData.role === 'waiter' || userData.role === 'kitchen') ? 'pending' : 'approved';
@@ -97,7 +65,7 @@ export async function registerUser(userData: Omit<User, 'id' | 'status'>, isAdmi
         revalidatePath('/admin');
     }
 
-    return { success: true, pending: status === 'pending' };
+    return { success: true, pending: status === 'pending', isFirstUser: userCount === 0 };
 }
 
 export async function loginUser(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
