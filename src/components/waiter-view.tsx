@@ -34,7 +34,7 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [confirmation, setConfirmation] = useState<{ type: 'status' | 'delete', orderId: string, status?: OrderStatus, message: string } | null>(null);
-  const [billingModalState, setBillingModalState] = useState<{ isOpen: boolean; bill: Bill | null }>({ isOpen: false, bill: null });
+  const [activeBill, setActiveBill] = useState<Bill | null>(null);
 
   
   const selectedWaiter = useMemo(() => {
@@ -90,16 +90,16 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
   const handleGenerateBill = async (tableNumber: number, waiterId: string) => {
     const newBill = await onCreateBill(tableNumber, waiterId);
     if(newBill) {
-        setBillingModalState({ isOpen: true, bill: newBill });
+        setActiveBill(newBill);
     }
   }
 
   const handleViewBill = (bill: Bill) => {
-    setBillingModalState({ isOpen: true, bill: bill });
+    setActiveBill(bill);
   };
 
   const handleCloseBillingModal = () => {
-    setBillingModalState({ isOpen: false, bill: null });
+    setActiveBill(null);
   }
 
   const handlePayBillFromModal = (billId: string) => {
@@ -344,13 +344,13 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
         </AlertDialogContent>
     </AlertDialog>
 
-    {billingModalState.isOpen && billingModalState.bill && (
+    {activeBill && (
         <BillingModal
-            isOpen={billingModalState.isOpen}
+            isOpen={!!activeBill}
             onClose={handleCloseBillingModal}
-            bill={billingModalState.bill}
+            bill={activeBill}
             onPayBill={handlePayBillFromModal}
-            orders={orders.filter(o => billingModalState.bill?.orderIds.includes(o.id))}
+            orders={orders.filter(o => activeBill?.orderIds.includes(o.id))}
             menuItems={menuItems}
         />
     )}
