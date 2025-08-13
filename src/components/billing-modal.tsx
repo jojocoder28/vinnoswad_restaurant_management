@@ -338,7 +338,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                             {!isRazorpayConfigured && !isPaid && (
                                 <Button type="button" onClick={handleManualPayment} disabled={loading}>
                                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4"/>}
-                                    {loading ? 'Confirming...' : 'Confirm Cash/Manual Payment'}
+                                    {loading ? 'Confirming...' : 'Confirm Payment'}
                                 </Button>
                             )}
                         </div>
