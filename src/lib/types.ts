@@ -70,3 +70,27 @@ export interface DecodedToken {
   iat: number;
   exp: number;
 }
+
+// Reports
+export interface ReportData {
+  reportPeriod: {
+    start: string;
+    end: string;
+  };
+  summary: {
+    totalRevenue: number;
+    totalOrders: number;
+    servedOrders: number;
+    cancelledOrders: number;
+    totalBills: number;
+    totalUsers: number;
+    totalMenuItems: number;
+  };
+  data: {
+    orders: Omit<Order, 'id'>[];
+    bills: Omit<Bill, 'id'>[];
+    users: Omit<User, 'id' | 'password'>[];
+    menuItems: Omit<MenuItem, 'id'>[];
+    waiters: Omit<Waiter, 'id'>[];
+  }
+}

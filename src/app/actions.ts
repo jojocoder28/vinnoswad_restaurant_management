@@ -4,7 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/mongodb';
 import { initialMenuItems, initialOrders, initialWaiters, initialTables, initialUsers } from '@/lib/mock-data';
-import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus, OrderItem, Bill, BillStatus } from '@/lib/types';
+import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus, OrderItem, Bill, BillStatus, ReportData } from '@/lib/types';
 import { Collection, ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
@@ -445,4 +445,63 @@ export async function markBillAsPaid(billId: string): Promise<void> {
     
     revalidatePath('/waiter');
     revalidatePath('/admin');
+}
+
+// Report Actions
+export async function getReportData(startDate: string, endDate: string): Promise<ReportData> {
+    const [orders, bills, users, menuItems, waiters] = await Promise.all([
+        getOrders(),
+        getBills(),
+        getUsers(),
+        getMenuItems(),
+        getWaiters(),
+    ]);
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999); // Ensure end of day is included
+
+    const filteredOrders = orders.filter(o => {
+        const orderDate = new Date(o.timestamp);
+        return orderDate >= start && orderDate <= end;
+    });
+
+    const filteredBills = bills.filter(b => {
+        const billDate = new Date(b.timestamp);
+        return billDate >= start && billDate <= end;
+    });
+
+    // Calculate overall stats from filtered data
+    const servedOrders = filteredOrders.filter(o => o.status === 'served');
+    const totalRevenue = servedOrders.reduce((total, order) => 
+        total + order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0), 0);
+
+    const totalOrders = filteredOrders.length;
+    const cancelledOrders = filteredOrders.filter(o => o.status === 'cancelled').length;
+    
+    // Sanitize user data (remove passwords)
+    const sanitizedUsers = users.map(({ password, ...user }) => user);
+
+    return {
+        reportPeriod: {
+            start: startDate,
+            end: endDate,
+        },
+        summary: {
+            totalRevenue,
+            totalOrders,
+            servedOrders: servedOrders.length,
+            cancelledOrders,
+            totalBills: filteredBills.length,
+            totalUsers: users.length,
+            totalMenuItems: menuItems.length,
+        },
+        data: {
+            orders: filteredOrders,
+            bills: filteredBills,
+            users: sanitizedUsers,
+            menuItems,
+            waiters,
+        }
+    }
 }

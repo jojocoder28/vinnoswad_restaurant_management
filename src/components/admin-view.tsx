@@ -10,6 +10,7 @@ import UserManagement from './user-management';
 import LiveStatusDashboard from './live-status-dashboard';
 import ServedOrdersList from './served-orders-list';
 import CancelledOrdersList from './cancelled-orders-list';
+import ReportGenerator from './report-generator';
 
 interface AdminViewProps {
   orders: Order[];
@@ -34,7 +35,7 @@ export default function AdminView({
     onCreateUser, 
     currentUser 
 }: AdminViewProps) {
-  const servedOrders = useMemo(() => orders.filter(o => o.status === 'served'), [orders]);
+  const servedOrders = useMemo(() => orders.filter(o => o.status === 'served' || o.status === 'billed'), [orders]);
   const cancelledOrders = useMemo(() => orders.filter(o => o.status === 'cancelled'), [orders]);
 
   const totalRevenue = useMemo(() => {
@@ -51,11 +52,12 @@ export default function AdminView({
 
   return (
     <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 md:w-fit">
+        <TabsList className="grid w-full grid-cols-5 md:w-fit">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="status">Restaurant Status</TabsTrigger>
             <TabsTrigger value="history">Order History</TabsTrigger>
             <TabsTrigger value="users">Staff & Users</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-6 space-y-8">
@@ -100,6 +102,10 @@ export default function AdminView({
                 onCreateUser={onCreateUser}
                 currentUser={currentUser}
              />
+        </TabsContent>
+
+        <TabsContent value="reports" className="mt-6">
+            <ReportGenerator />
         </TabsContent>
     </Tabs>
   );
