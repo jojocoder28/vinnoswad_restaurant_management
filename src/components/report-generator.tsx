@@ -80,24 +80,38 @@ export default function ReportGenerator() {
             if (reportData.data.orders.length > 0) {
                 // Flatten the items for better CSV readability
                 const flatOrders = reportData.data.orders.flatMap(order => 
-                    order.items.map(item => ({
-                        orderId: order.id,
-                        tableNumber: order.tableNumber,
-                        waiterName: order.waiterName,
-                        status: order.status,
-                        timestamp: order.timestamp,
-                        cancellationReason: order.cancellationReason || '',
-                        itemName: item.itemName,
-                        quantity: item.quantity,
-                        price: item.price,
-                        total: item.price * item.quantity
-                    }))
+                    order.items.map(item => {
+                        const orderDate = new Date(order.timestamp);
+                        return {
+                            orderId: order.id,
+                            tableNumber: order.tableNumber,
+                            waiterName: order.waiterName,
+                            status: order.status,
+                            date: format(orderDate, "yyyy-MM-dd"),
+                            time: format(orderDate, "HH:mm:ss"),
+                            cancellationReason: order.cancellationReason || '',
+                            itemName: item.itemName,
+                            quantity: item.quantity,
+                            price: item.price,
+                            total: item.price * item.quantity
+                        }
+                    })
                 );
-                const ordersCSV = toCSV(flatOrders, ['orderId', 'tableNumber', 'waiterName', 'status', 'timestamp', 'cancellationReason', 'itemName', 'quantity', 'price', 'total']);
+                const ordersCSV = toCSV(flatOrders, ['orderId', 'tableNumber', 'waiterName', 'status', 'date', 'time', 'cancellationReason', 'itemName', 'quantity', 'price', 'total']);
                 downloadCSV(ordersCSV, `orders_report_${fileSuffix}.csv`);
             }
             if (reportData.data.bills.length > 0) {
-                const billsCSV = toCSV(reportData.data.bills, Object.keys(reportData.data.bills[0]));
+                 const formattedBills = reportData.data.bills.map(bill => {
+                    const billDate = new Date(bill.timestamp);
+                    return {
+                        ...bill,
+                        date: format(billDate, 'yyyy-MM-dd'),
+                        time: format(billDate, 'HH:mm:ss'),
+                        timestamp: undefined // remove original timestamp
+                    }
+                });
+                const billColumns = [...Object.keys(formattedBills[0]).filter(k => k !== 'timestamp' && k !== 'orderIds'), 'date', 'time'];
+                const billsCSV = toCSV(formattedBills, billColumns);
                 downloadCSV(billsCSV, `bills_report_${fileSuffix}.csv`);
             }
             if (reportData.data.users.length > 0) {
