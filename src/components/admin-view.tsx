@@ -8,6 +8,7 @@ import { useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserManagement from './user-management';
 import LiveStatusDashboard from './live-status-dashboard';
+import ServedOrdersList from './served-orders-list';
 
 interface AdminViewProps {
   orders: Order[];
@@ -49,9 +50,10 @@ export default function AdminView({
 
   return (
     <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:w-fit">
+        <TabsList className="grid w-full grid-cols-4 md:w-fit">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="status">Restaurant Status</TabsTrigger>
+            <TabsTrigger value="history">Order History</TabsTrigger>
             <TabsTrigger value="users">Staff & Users</TabsTrigger>
         </TabsList>
 
@@ -72,6 +74,13 @@ export default function AdminView({
                 menuItems={menuItems}
                 waiters={waiters}
                 tables={tables}
+            />
+        </TabsContent>
+
+         <TabsContent value="history" className="mt-6">
+            <ServedOrdersList 
+                orders={servedOrders}
+                waiters={waiters}
             />
         </TabsContent>
 
