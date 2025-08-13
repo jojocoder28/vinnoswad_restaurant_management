@@ -12,11 +12,11 @@ import { MoreHorizontal, PlusCircle, Pencil, Trash2, CheckCircle } from 'lucide-
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 import StockItemForm from './stock-item-form';
+import MenuItemRecipeForm from './menu-item-recipe-form';
 
 // Dummy forms for now. In a real app, these would be proper modals with forms.
 const SupplierForm = () => <div>Supplier Form Placeholder</div>;
 const PurchaseOrderForm = () => <div>Purchase Order Form Placeholder</div>;
-const MenuItemRecipeForm = () => <div>Menu Item Recipe Form Placeholder</div>;
 
 
 interface SupplyChainManagementProps {
@@ -53,12 +53,13 @@ export default function SupplyChainManagement({
     
     const [isStockItemFormOpen, setIsStockItemFormOpen] = useState(false);
     const [editingStockItem, setEditingStockItem] = useState<StockItem | null>(null);
+    const [isRecipeFormOpen, setIsRecipeFormOpen] = useState(false);
+    const [editingRecipeItem, setEditingRecipeItem] = useState<MenuItem | null>(null);
 
 
     // These would be implemented with state and modals
     const handleAddSupplierClick = () => alert("To be implemented: Add Supplier Form");
     const handleAddPurchaseOrderClick = () => alert("To be implemented: Add Purchase Order Form");
-    const handleEditRecipeClick = (item: MenuItem) => alert(`To be implemented: Edit recipe for ${item.name}`);
     
     const handleOpenStockItemForm = (item: StockItem | null = null) => {
         setEditingStockItem(item);
@@ -76,6 +77,21 @@ export default function SupplyChainManagement({
         } else {
             onAddStockItem(itemData);
         }
+    };
+    
+    const handleEditRecipeClick = (item: MenuItem) => {
+        setEditingRecipeItem(item);
+        setIsRecipeFormOpen(true);
+    };
+    
+    const handleCloseRecipeForm = () => {
+        setEditingRecipeItem(null);
+        setIsRecipeFormOpen(false);
+    };
+
+    const handleSaveRecipe = (item: MenuItem) => {
+        onUpdateMenuItem(item);
+        handleCloseRecipeForm();
     };
 
 
@@ -125,8 +141,8 @@ export default function SupplyChainManagement({
                                              <DropdownMenu>
                                                 <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
                                                 <DropdownMenuContent>
-                                                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleOpenStockItemForm(item)}>Edit</DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-destructive" onClick={() => onDeleteStockItem(item.id)}>Delete</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -285,6 +301,16 @@ export default function SupplyChainManagement({
             onSave={handleSaveStockItem}
             item={editingStockItem}
         />
+
+        {editingRecipeItem && (
+             <MenuItemRecipeForm
+                isOpen={isRecipeFormOpen}
+                onClose={handleCloseRecipeForm}
+                onSave={handleSaveRecipe}
+                item={editingRecipeItem}
+                stockItems={stockItems}
+            />
+        )}
         </>
     );
 }
