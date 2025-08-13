@@ -13,10 +13,10 @@ import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 import StockItemForm from './stock-item-form';
 import MenuItemRecipeForm from './menu-item-recipe-form';
+import PurchaseOrderForm from './purchase-order-form';
 
 // Dummy forms for now. In a real app, these would be proper modals with forms.
 const SupplierForm = () => <div>Supplier Form Placeholder</div>;
-const PurchaseOrderForm = () => <div>Purchase Order Form Placeholder</div>;
 
 
 interface SupplyChainManagementProps {
@@ -55,11 +55,11 @@ export default function SupplyChainManagement({
     const [editingStockItem, setEditingStockItem] = useState<StockItem | null>(null);
     const [isRecipeFormOpen, setIsRecipeFormOpen] = useState(false);
     const [editingRecipeItem, setEditingRecipeItem] = useState<MenuItem | null>(null);
+    const [isPurchaseOrderFormOpen, setIsPurchaseOrderFormOpen] = useState(false);
 
 
     // These would be implemented with state and modals
     const handleAddSupplierClick = () => alert("To be implemented: Add Supplier Form");
-    const handleAddPurchaseOrderClick = () => alert("To be implemented: Add Purchase Order Form");
     
     const handleOpenStockItemForm = (item: StockItem | null = null) => {
         setEditingStockItem(item);
@@ -92,6 +92,10 @@ export default function SupplyChainManagement({
     const handleSaveRecipe = (item: MenuItem) => {
         onUpdateMenuItem(item);
         handleCloseRecipeForm();
+    };
+    
+    const handleSavePurchaseOrder = (data: Omit<PurchaseOrder, 'id'>) => {
+        onAddPurchaseOrder(data);
     };
 
 
@@ -206,7 +210,7 @@ export default function SupplyChainManagement({
                                 <CardTitle className="font-headline">Purchase Orders</CardTitle>
                                 <CardDescription>Track orders from suppliers to replenish stock.</CardDescription>
                             </div>
-                            <Button onClick={handleAddPurchaseOrderClick}>
+                            <Button onClick={() => setIsPurchaseOrderFormOpen(true)}>
                                 <PlusCircle className="mr-2"/> New Purchase Order
                             </Button>
                         </div>
@@ -311,6 +315,14 @@ export default function SupplyChainManagement({
                 stockItems={stockItems}
             />
         )}
+        
+        <PurchaseOrderForm 
+            isOpen={isPurchaseOrderFormOpen}
+            onClose={() => setIsPurchaseOrderFormOpen(false)}
+            onSave={handleSavePurchaseOrder}
+            suppliers={suppliers}
+            stockItems={stockItems}
+        />
         </>
     );
 }
