@@ -1,48 +1,27 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import multer from 'multer';
 import cloudinary from '@/lib/cloudinary';
 import { Readable } from 'stream';
 
-// Disable Next.js body parsing to handle multipart/form-data with multer
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
-
-// Promisify multer to use it with async/await
-const uploadMiddleware = (req: any, res: any) => {
-    const upload = multer().single('file'); // 'file' should match the name attribute in your form's file input
-    return new Promise<void>((resolve, reject) => {
-        upload(req, res, (err: any) => {
-            if (err) {
-                console.error("Multer error:", err);
-                return reject(new Error('File upload error: ' + err.message));
-            }
-            resolve();
-        });
-    });
-};
-
 export async function POST(req: NextRequest) {
     try {
-        // We need to cast req to 'any' to make it compatible with multer, which expects Express.js types
-        const anyReq = req as any;
-        await uploadMiddleware(anyReq, {} as any);
+        const formData = await req.formData();
+        const file = formData.get('file') as File | null;
 
-        if (!anyReq.file) {
+        if (!file) {
             return NextResponse.json({ error: 'No file uploaded.' }, { status: 400 });
         }
 
-        const file = anyReq.file;
+        // Convert file to buffer
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = new Uint8Array(arrayBuffer);
 
         // Upload to Cloudinary from buffer
         return new Promise((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
                 {
                     resource_type: 'image',
-                    folder: 'vinnoswad_menu', // Optional: organize uploads in a folder
+                    folder: 'vinnoswad_menu',
                 },
                 (error, result) => {
                     if (error) {
@@ -56,10 +35,10 @@ export async function POST(req: NextRequest) {
                     }
                 }
             );
-            
+
             const readableStream = new Readable();
-            readableStream.push(file.buffer);
-            readableStream.push(null); // Signal the end of the stream
+            readableStream.push(buffer);
+            readableStream.push(null);
             readableStream.pipe(uploadStream);
         });
 
