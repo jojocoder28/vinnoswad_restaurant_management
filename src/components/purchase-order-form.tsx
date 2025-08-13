@@ -108,9 +108,9 @@ export default function PurchaseOrderForm({ isOpen, onClose, onSave, suppliers, 
               )}
             />
             
-            <div>
+            <div className="space-y-4">
               <FormLabel>Items to Order</FormLabel>
-              <ScrollArea className="h-60 mt-2 pr-4">
+              <ScrollArea className="h-60 pr-4">
               <div className="space-y-4">
                 {fields.map((field, index) => (
                   <div key={field.id} className="grid grid-cols-12 items-end gap-2 p-2 border rounded-md">
@@ -175,19 +175,18 @@ export default function PurchaseOrderForm({ isOpen, onClose, onSave, suppliers, 
                 ))}
               </div>
               </ScrollArea>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => append({ stockItemId: '', quantity: 0, costPerUnit: 0 })}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Another Item
+              </Button>
                {form.formState.errors.items && typeof form.formState.errors.items === 'object' && 'message' in form.formState.errors.items && (
                  <p className="text-sm font-medium text-destructive mt-2">{form.formState.errors.items.message}</p>
                )}
             </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => append({ stockItemId: '', quantity: 0, costPerUnit: 0 })}
-            >
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Item
-            </Button>
             
             <Separator />
 
