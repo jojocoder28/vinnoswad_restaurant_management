@@ -80,9 +80,10 @@ body {
     visibility: visible;
   }
   #printable-bill {
-    width: 100%;
+    position: absolute;
     left: 0;
     top: 0;
+    width: 100%;
   }
   .no-print {
     display: none;
