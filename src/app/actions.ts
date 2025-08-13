@@ -4,7 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/mongodb';
 import { initialMenuItems, initialOrders, initialWaiters, initialTables, initialUsers } from '@/lib/mock-data';
-import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus } from '@/lib/types';
+import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus, OrderItem } from '@/lib/types';
 import { Collection, ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
@@ -226,10 +226,26 @@ export async function getOrders(): Promise<Order[]> {
     return orders.map(order => mapId<Order>(order));
 }
 
-export async function createOrder(orderData: Omit<Order, 'id' | 'timestamp' | 'status'>, tableIdToUpdate: string): Promise<Order> {
+export async function createOrder(orderData: Omit<Order, 'id' | 'timestamp' | 'status' | 'items'> & { items: Omit<OrderItem, 'price'>[] }, tableIdToUpdate: string): Promise<Order> {
     const ordersCollection = await getCollection<Order>('orders');
+    const menuItemsCollection = await getCollection<MenuItem>('menu');
+
+    const itemsWithPrices: OrderItem[] = await Promise.all(
+        orderData.items.map(async (item) => {
+            const menuItem = await menuItemsCollection.findOne({ _id: new ObjectId(item.menuItemId) });
+            if (!menuItem) {
+                throw new Error(`Menu item with id ${item.menuItemId} not found`);
+            }
+            return {
+                ...item,
+                price: menuItem.price
+            };
+        })
+    );
+
     const newOrder = {
         ...orderData,
+        items: itemsWithPrices,
         timestamp: new Date().toISOString(),
         status: 'pending' as OrderStatus,
     };

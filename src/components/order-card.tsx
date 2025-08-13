@@ -25,8 +25,7 @@ const statusStyles: Record<OrderStatus, string> = {
 
 export default function OrderCard({ order, menuItems, waiterName, actions }: OrderCardProps) {
   const orderTotal = order.items.reduce((total, item) => {
-    const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
-    return total + (menuItem ? menuItem.price * item.quantity : 0);
+    return total + (item.price * item.quantity);
   }, 0);
 
   return (
@@ -57,7 +56,7 @@ export default function OrderCard({ order, menuItems, waiterName, actions }: Ord
                 return (
                 <li key={item.menuItemId} className="flex justify-between">
                     <span>{item.quantity}x {menuItem?.name || 'Unknown Item'}</span>
-                    <span className="font-mono">₹{(menuItem ? menuItem.price * item.quantity : 0).toFixed(2)}</span>
+                    <span className="font-mono">₹{(item.price * item.quantity).toFixed(2)}</span>
                 </li>
                 );
             })}

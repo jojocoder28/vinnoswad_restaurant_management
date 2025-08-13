@@ -26,8 +26,7 @@ export default function RevenueCharts({ orders, menuItems, waiters }: RevenueCha
     const revenueMap = new Map<string, number>();
     orders.forEach(order => {
       const orderTotal = order.items.reduce((sum, item) => {
-        const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
-        return sum + (menuItem ? menuItem.price * item.quantity : 0);
+        return sum + item.price * item.quantity;
       }, 0);
       const currentRevenue = revenueMap.get(order.waiterId) || 0;
       revenueMap.set(order.waiterId, currentRevenue + orderTotal);
@@ -36,7 +35,7 @@ export default function RevenueCharts({ orders, menuItems, waiters }: RevenueCha
       name: waiter.name,
       revenue: revenueMap.get(waiter.id) || 0,
     }));
-  }, [orders, menuItems, waiters]);
+  }, [orders, waiters]);
 
   const revenueByItem = useMemo(() => {
     const revenueMap = new Map<string, { revenue: number, quantity: number }>();
@@ -46,7 +45,7 @@ export default function RevenueCharts({ orders, menuItems, waiters }: RevenueCha
         if (menuItem) {
           const current = revenueMap.get(item.menuItemId) || { revenue: 0, quantity: 0 };
           revenueMap.set(item.menuItemId, {
-            revenue: current.revenue + menuItem.price * item.quantity,
+            revenue: current.revenue + item.price * item.quantity,
             quantity: current.quantity + item.quantity
           });
         }

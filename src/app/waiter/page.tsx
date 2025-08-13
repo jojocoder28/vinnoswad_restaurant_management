@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import type { Order, MenuItem, Waiter, Table, DecodedToken } from '@/lib/types';
+import type { Order, MenuItem, Waiter, Table, DecodedToken, OrderItem } from '@/lib/types';
 import {
   getOrders,
   createOrder,
@@ -65,7 +65,7 @@ export default function WaiterPage() {
     fetchData();
   }, [toast, router]);
 
-  const handleCreateOrder = async (orderData: Omit<Order, 'id' | 'timestamp' | 'status'>, tableId: string) => {
+  const handleCreateOrder = async (orderData: Omit<Order, 'id' | 'timestamp' | 'status' | 'items'> & { items: Omit<OrderItem, 'price'>[] }, tableId: string) => {
     try {
       const newOrder = await createOrder(orderData, tableId);
       setOrders(prev => [newOrder, ...prev]);

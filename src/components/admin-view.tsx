@@ -35,12 +35,11 @@ export default function AdminView({
   const totalRevenue = useMemo(() => {
     return servedOrders.reduce((total, order) => {
       const orderTotal = order.items.reduce((sum, item) => {
-        const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
-        return sum + (menuItem ? menuItem.price * item.quantity : 0);
+        return sum + (item.price * item.quantity);
       }, 0);
       return total + orderTotal;
     }, 0);
-  }, [servedOrders, menuItems]);
+  }, [servedOrders]);
 
   const totalOrders = useMemo(() => orders.length, [orders]);
   const totalMenuItems = useMemo(() => menuItems.length, [menuItems]);

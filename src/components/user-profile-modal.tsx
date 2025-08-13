@@ -44,8 +44,7 @@ export default function UserProfileModal({ isOpen, onClose, user, orders, menuIt
         const totalOrders = waiterOrders.length;
         const totalRevenue = waiterOrders.reduce((total, order) => {
             const orderTotal = order.items.reduce((sum, item) => {
-                const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
-                return sum + (menuItem ? menuItem.price * item.quantity : 0);
+                return sum + (item.price * item.quantity);
             }, 0);
             return total + orderTotal;
         }, 0);
@@ -57,7 +56,7 @@ export default function UserProfileModal({ isOpen, onClose, user, orders, menuIt
             waiterProfile,
             waiterRecentOrders: sortedOrders
         };
-    }, [user, orders, menuItems, waiters]);
+    }, [user, orders, waiters]);
 
     const { managerPerformance, managerRecentPending } = useMemo(() => {
         if (user.role !== 'manager') return { managerPerformance: null, managerRecentPending: [] };
@@ -126,8 +125,7 @@ export default function UserProfileModal({ isOpen, onClose, user, orders, menuIt
                                         <TableBody>
                                             {waiterRecentOrders.map(order => {
                                                  const orderTotal = order.items.reduce((total, item) => {
-                                                    const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
-                                                    return total + (menuItem ? menuItem.price * item.quantity : 0);
+                                                    return total + (item.price * item.quantity);
                                                 }, 0);
                                                 return (
                                                     <TableRow key={order.id}>
@@ -167,8 +165,7 @@ export default function UserProfileModal({ isOpen, onClose, user, orders, menuIt
                                         <TableBody>
                                             {managerRecentPending.length > 0 ? managerRecentPending.map(order => {
                                                  const orderTotal = order.items.reduce((total, item) => {
-                                                    const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
-                                                    return total + (menuItem ? menuItem.price * item.quantity : 0);
+                                                    return total + (item.price * item.quantity);
                                                 }, 0);
                                                 const waiter = waiters.find(w => w.id === order.waiterId);
                                                 return (

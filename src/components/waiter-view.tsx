@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useMemo, useState } from 'react';
-import type { Order, MenuItem, Waiter, OrderStatus, Table, DecodedToken } from '@/lib/types';
+import type { Order, MenuItem, Waiter, OrderStatus, Table, DecodedToken, OrderItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Utensils, ShieldAlert } from 'lucide-react';
 import OrderCard from './order-card';
@@ -18,7 +18,7 @@ interface WaiterViewProps {
   waiters: Waiter[];
   tables: Table[];
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
-  onCreateOrder: (order: Omit<Order, 'id' | 'timestamp' | 'status'>, tableId: string) => void;
+  onCreateOrder: (order: Omit<Order, 'id' | 'timestamp' | 'status' | 'items'> & { items: Omit<OrderItem, 'price'>[] }, tableId: string) => void;
   currentUser: DecodedToken;
 }
 
@@ -37,7 +37,7 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
     const served: Order[] = [];
     orders.forEach(order => {
       if (order.waiterId === selectedWaiter.id) {
-        if (order.status === 'served') {
+        if (order.status === 'served' || order.status === 'cancelled') {
           served.push(order);
         } else {
           active.push(order);
@@ -86,7 +86,7 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
        <Tabs defaultValue="active" className="w-full">
             <TabsList>
               <TabsTrigger value="active">Active Orders</TabsTrigger>
-              <TabsTrigger value="served">Served History</TabsTrigger>
+              <TabsTrigger value="served">Order History</TabsTrigger>
             </TabsList>
 
             <TabsContent value="active" className="mt-4">
