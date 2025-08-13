@@ -12,7 +12,7 @@ import { Check } from 'lucide-react';
 interface BillingModalProps {
     isOpen: boolean;
     onClose: () => void;
-    bill: Bill;
+    bill: Bill | null;
     onPayBill: (billId: string) => void;
     orders: Order[];
     menuItems: MenuItem[];
@@ -23,13 +23,17 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
     const YOUR_UPI_ID = "dasjojo7-1@okicici";
 
     useEffect(() => {
-        if (isOpen && qrCodeRef.current) {
+        if (isOpen && qrCodeRef.current && bill) {
             const upiString = `upi://pay?pa=${YOUR_UPI_ID}&pn=EateryFlow&am=${bill.total.toFixed(2)}&cu=INR&tn=Bill for Table ${bill.tableNumber}`;
             QRCode.toCanvas(qrCodeRef.current, upiString, { width: 256, errorCorrectionLevel: 'H' }, (error) => {
                 if (error) console.error("Could not generate QR code:", error);
             });
         }
-    }, [isOpen, bill.total, bill.tableNumber, YOUR_UPI_ID]);
+    }, [isOpen, bill, YOUR_UPI_ID]);
+
+    if (!bill) {
+        return null;
+    }
 
     const allItems = orders.flatMap(order => order.items);
 
@@ -91,3 +95,4 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
         </Dialog>
     );
 }
+
