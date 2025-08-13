@@ -168,7 +168,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-lg print:max-w-none print:border-none print:shadow-none">
+            <DialogContent className="sm:max-w-lg print:max-w-none print:border-none print:shadow-none print:hidden">
                  <div id="printable-bill" className="hidden print:block text-black relative">
                     {isPaid && (
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -328,4 +328,3 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
         </Dialog>
     );
 }
-
