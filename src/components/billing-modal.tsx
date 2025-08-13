@@ -7,11 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Check, IndianRupee, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { createRazorpayOrder, verifyRazorpayPayment } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import QRCode from "react-qr-code";
 
 declare const Razorpay: any;
+
+// Fallback UPI ID if Razorpay is not configured.
+const FALLBACK_UPI_ID = "your-upi-id@okhdfcbank";
 
 interface BillingModalProps {
     isOpen: boolean;
@@ -26,6 +30,9 @@ interface BillingModalProps {
 export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders, menuItems, currentUser }: BillingModalProps) {
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
+    
+    // Check if Razorpay is configured
+    const isRazorpayConfigured = !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
     // Consolidate all items from the billed orders for display.
     const allItems = orders.flatMap(order => 
@@ -51,7 +58,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
     
     const finalItems = Array.from(groupedItems.values());
 
-    const handlePayment = async () => {
+    const handleRazorpayPayment = async () => {
         if (!bill) return;
         setLoading(true);
 
@@ -79,8 +86,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                             razorpay_signature: response.razorpay_signature,
                         });
                         
-                        // 4. If verification is successful, mark the bill as paid
-                        onPayBill(bill.id);
+                        // 4. If verification is successful, onPayBill is called automatically by the server action
                         toast({ title: "Payment Successful!", description: "The bill has been marked as paid." });
                         onClose();
 
@@ -104,6 +110,13 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
             };
 
             const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function (response: any) {
+                toast({
+                    title: "Payment Failed",
+                    description: response.error.description || "The payment could not be completed.",
+                    variant: "destructive"
+                });
+            });
             rzp.open();
 
         } catch (error) {
@@ -117,10 +130,19 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
             setLoading(false);
         }
     }
+    
+    const handleManualPayment = () => {
+        if (!bill) return;
+        setLoading(true);
+        onPayBill(bill.id);
+        setLoading(false);
+    }
 
     if (!isOpen || !bill) {
         return null;
     }
+
+    const upiUri = `upi://pay?pa=${FALLBACK_UPI_ID}&pn=Vinnoswad&am=${bill.total.toFixed(2)}&cu=INR&tn=Bill for Table ${bill.tableNumber}`;
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -161,12 +183,33 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                     </div>
                 </div>
 
+                {!isRazorpayConfigured && (
+                    <div className="flex flex-col items-center gap-4">
+                        <Alert>
+                            <AlertTitle>Pay with any UPI App</AlertTitle>
+                            <AlertDescription>
+                                Scan the QR code with your phone to pay the bill amount.
+                            </AlertDescription>
+                        </Alert>
+                         <div className="bg-white p-4 rounded-md">
+                            <QRCode value={upiUri} size={200} />
+                        </div>
+                    </div>
+                )}
+
                 <DialogFooter className="mt-4">
                     <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>Close</Button>
-                    <Button type="button" onClick={handlePayment} disabled={loading}>
-                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <IndianRupee className="mr-2 h-4 w-4"/>}
-                        {loading ? 'Processing...' : 'Pay with Razorpay'}
-                    </Button>
+                    {isRazorpayConfigured ? (
+                        <Button type="button" onClick={handleRazorpayPayment} disabled={loading}>
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <IndianRupee className="mr-2 h-4 w-4"/>}
+                            {loading ? 'Processing...' : 'Pay with Razorpay'}
+                        </Button>
+                    ) : (
+                        <Button type="button" onClick={handleManualPayment} disabled={loading}>
+                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4"/>}
+                            {loading ? 'Confirming...' : 'Confirm Cash/Manual Payment'}
+                        </Button>
+                    )}
                 </DialogFooter>
             </DialogContent>
         </Dialog>

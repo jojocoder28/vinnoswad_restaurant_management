@@ -676,6 +676,7 @@ export async function verifyRazorpayPayment(data: {
         throw new Error("Razorpay key ID is not configured for fetching order.");
     }
 
+    // Re-initialize to fetch order details
     const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
     
     // The payment is authentic. Now, fetch the order from the database
