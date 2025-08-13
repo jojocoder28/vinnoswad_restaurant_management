@@ -33,17 +33,8 @@ export async function registerUser(userData: Omit<User, 'id' | 'status'>, isAdmi
 
     const hashedPassword = await bcrypt.hash(userData.password!, 10);
     
-    let status: UserStatus;
-    // The first user registered should be an admin
-    const userCount = await usersCollection.countDocuments();
-    if (userCount === 0) {
-        status = 'approved';
-        userData.role = 'admin';
-    } else if (isAdminCreating) {
-        status = 'approved';
-    } else {
-        status = (userData.role === 'manager' || userData.role === 'waiter' || userData.role === 'kitchen') ? 'pending' : 'approved';
-    }
+    // All self-registered users start as pending. Only an admin can create an approved user.
+    const status: UserStatus = isAdminCreating ? 'approved' : 'pending';
     
     const newUser = {
         ...userData,
@@ -54,6 +45,7 @@ export async function registerUser(userData: Omit<User, 'id' | 'status'>, isAdmi
     const result = await usersCollection.insertOne(newUser as Omit<User, 'id'>);
     const newUserId = result.insertedId.toHexString();
 
+    // If an admin creates an approved waiter, add them to the waiters collection immediately.
     if (status === 'approved' && userData.role === 'waiter') {
         const waitersCollection = await getCollection<Waiter>('waiters');
         await waitersCollection.insertOne({
@@ -68,7 +60,8 @@ export async function registerUser(userData: Omit<User, 'id' | 'status'>, isAdmi
         revalidatePath('/admin');
     }
 
-    return { success: true, pending: status === 'pending', isFirstUser: userCount === 0 };
+    // The isFirstUser concept is removed, so we return a consistent response.
+    return { success: true, pending: status === 'pending' };
 }
 
 export async function loginUser(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {

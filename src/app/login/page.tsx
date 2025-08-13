@@ -14,8 +14,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import Logo from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -73,14 +71,6 @@ export default function LoginPage() {
         <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Vinnoswad</h1>
         <p className="text-muted-foreground">Streamlined order management for restaurants.</p>
       </header>
-
-      <Alert className="max-w-sm mb-4">
-          <Terminal className="h-4 w-4" />
-          <AlertTitle>First time setup</AlertTitle>
-          <AlertDescription>
-           <div className="text-xs">There are no users in the database. The first account you create will automatically become the admin. Please <Link href="/signup" className="underline font-bold">sign up</Link> to get started.</div>
-          </AlertDescription>
-      </Alert>
 
       <Card className="w-full max-w-sm">
         <CardHeader>
