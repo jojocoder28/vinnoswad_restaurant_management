@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { PurchaseOrder, Supplier, StockItem } from '@/lib/types';
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, CheckSquare } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 
@@ -46,15 +46,25 @@ export default function PurchaseOrderForm({ isOpen, onClose, onSave, suppliers, 
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, control } = useFieldArray({
     control: form.control,
     name: 'items',
   });
 
-  const watchedItems = form.watch('items');
-  const totalCost = useMemo(() => {
-    return watchedItems.reduce((total, item) => total + ((item.quantity || 0) * (item.costPerUnit || 0)), 0);
-  }, [watchedItems]);
+  const [totalCost, setTotalCost] = useState(0);
+
+  const updateTotalCost = () => {
+    const items = form.getValues('items');
+    const newTotal = items.reduce((total, item) => total + ((item.quantity || 0) * (item.costPerUnit || 0)), 0);
+    setTotalCost(newTotal);
+  };
+  
+  // Set initial cost when the form opens
+  useEffect(() => {
+    if(isOpen) {
+        updateTotalCost();
+    }
+  }, [isOpen, fields.length]);
 
 
   const onSubmit = (values: z.infer<typeof purchaseOrderSchema>) => {
@@ -73,6 +83,7 @@ export default function PurchaseOrderForm({ isOpen, onClose, onSave, suppliers, 
       supplierId: '',
       items: [{ stockItemId: '', quantity: 0, costPerUnit: 0 }],
     });
+    setTotalCost(0);
     onClose();
   }
 
@@ -86,7 +97,7 @@ export default function PurchaseOrderForm({ isOpen, onClose, onSave, suppliers, 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
-              control={form.control}
+              control={control}
               name="supplierId"
               render={({ field }) => (
                 <FormItem>
@@ -115,7 +126,7 @@ export default function PurchaseOrderForm({ isOpen, onClose, onSave, suppliers, 
                 {fields.map((field, index) => (
                   <div key={field.id} className="grid grid-cols-12 items-end gap-2 p-2 border rounded-md">
                     <FormField
-                      control={form.control}
+                      control={control}
                       name={`items.${index}.stockItemId`}
                       render={({ field }) => (
                         <FormItem className="col-span-5">
@@ -139,7 +150,7 @@ export default function PurchaseOrderForm({ isOpen, onClose, onSave, suppliers, 
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={control}
                       name={`items.${index}.quantity`}
                       render={({ field }) => (
                         <FormItem className='col-span-2'>
@@ -152,7 +163,7 @@ export default function PurchaseOrderForm({ isOpen, onClose, onSave, suppliers, 
                       )}
                     />
                      <FormField
-                      control={form.control}
+                      control={control}
                       name={`items.${index}.costPerUnit`}
                       render={({ field }) => (
                         <FormItem className='col-span-2'>
@@ -164,13 +175,15 @@ export default function PurchaseOrderForm({ isOpen, onClose, onSave, suppliers, 
                         </FormItem>
                       )}
                     />
-                    <div className="col-span-2 flex items-center gap-1">
-                        <p className="text-sm font-medium w-full text-right">= ₹{((watchedItems[index]?.quantity || 0) * (watchedItems[index]?.costPerUnit || 0)).toFixed(2)}</p>
+                    <div className="col-span-3 flex flex-col gap-1 items-center justify-end">
+                         <Button type="button" variant="secondary" size="sm" className="w-full" onClick={updateTotalCost}>
+                            <CheckSquare className="h-4 w-4" /> Confirm
+                         </Button>
+                         <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} className="w-full">
+                            <Trash2 className="h-4 w-4" />
+                         </Button>
                     </div>
 
-                    <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} className="col-span-1">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
                 ))}
               </div>
