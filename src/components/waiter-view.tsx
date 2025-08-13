@@ -11,6 +11,7 @@ import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import BillingModal from './billing-modal';
 
 
 interface WaiterViewProps {
@@ -23,34 +24,16 @@ interface WaiterViewProps {
   onCreateOrder: (order: Omit<Order, 'id' | 'timestamp' | 'status' | 'items'> & { items: Omit<OrderItem, 'price'>[] }, tableId: string) => void;
   onUpdateOrder: (orderId: string, items: Omit<OrderItem, 'price'>[]) => void;
   onDeleteOrder: (orderId: string) => void;
-  onCreateBill: (tableNumber: number, waiterId: string) => void;
+  onCreateBill: (tableNumber: number, waiterId: string) => Promise<Bill | void>;
   onPayBill: (billId: string) => void;
   currentUser: DecodedToken;
 }
-
-const BillCard = ({ bill, onPayBill }: { bill: Bill, onPayBill: (billId: string) => void }) => (
-    <Card>
-        <CardHeader>
-            <CardTitle className="flex justify-between items-center">
-                <span>Table {bill.tableNumber}</span>
-                <span className="font-mono text-lg">₹{bill.total.toFixed(2)}</span>
-            </CardTitle>
-            <CardDescription>
-                Subtotal: ₹{bill.subtotal.toFixed(2)} + Tax: ₹{bill.tax.toFixed(2)}
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-             <Button className="w-full" onClick={() => onPayBill(bill.id)}>
-                <Check className="mr-2 h-4 w-4" /> Mark as Paid
-            </Button>
-        </CardContent>
-    </Card>
-);
 
 export default function WaiterView({ orders, bills, menuItems, waiters, tables, onUpdateStatus, onCreateOrder, onUpdateOrder, onDeleteOrder, onCreateBill, onPayBill, currentUser }: WaiterViewProps) {
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [confirmation, setConfirmation] = useState<{ type: 'status' | 'delete', orderId: string, status?: OrderStatus, message: string } | null>(null);
+  const [billingModalState, setBillingModalState] = useState<{ isOpen: boolean; bill: Bill | null }>({ isOpen: false, bill: null });
 
   
   const selectedWaiter = useMemo(() => {
@@ -93,13 +76,26 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
     const tableNumbersWithServedOrders = new Set(
         orders.filter(o => o.status === 'served' && o.waiterId === selectedWaiter.id).map(o => o.tableNumber)
     );
-    return Array.from(tableNumbersWithServedOrders);
-  }, [orders, selectedWaiter]);
+    // Exclude tables that already have an unpaid bill
+    const tablesWithUnpaidBills = new Set(bills.filter(b => b.status === 'unpaid').map(b => b.tableNumber));
+    return Array.from(tableNumbersWithServedOrders).filter(tn => !tablesWithUnpaidBills.has(tn));
+  }, [orders, bills, selectedWaiter]);
   
-  const unpaidBills = useMemo(() => {
-      if (!selectedWaiter) return [];
-      return bills.filter(b => b.status === 'unpaid' && b.waiterId === selectedWaiter.id);
-  }, [bills, selectedWaiter]);
+  const handleGenerateBill = async (tableNumber: number, waiterId: string) => {
+    const newBill = await onCreateBill(tableNumber, waiterId);
+    if(newBill) {
+        setBillingModalState({ isOpen: true, bill: newBill });
+    }
+  }
+
+  const handleCloseBillingModal = () => {
+    setBillingModalState({ isOpen: false, bill: null });
+  }
+
+  const handlePayBillFromModal = (billId: string) => {
+    onPayBill(billId);
+    handleCloseBillingModal();
+  }
 
 
   const handleConfirm = () => {
@@ -228,8 +224,8 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
                                         <CardDescription>This table has served orders ready for billing.</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <Button className="w-full" onClick={() => onCreateBill(tableNum, selectedWaiter.id)}>
-                                            <FileText className="mr-2 h-4 w-4"/> Generate Bill
+                                        <Button className="w-full" onClick={() => handleGenerateBill(tableNum, selectedWaiter.id)}>
+                                            <FileText className="mr-2 h-4 w-4"/> Generate Bill & QR Code
                                         </Button>
                                     </CardContent>
                                 </Card>
@@ -241,27 +237,6 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
                                         <CardTitle>No Tables to Bill</CardTitle>
                                         <CardDescription>
                                         There are no tables with served orders waiting to be billed.
-                                        </CardDescription>
-                                    </CardHeader>
-                                </Card>
-                            </div>
-                        )}
-                    </div>
-                </div>
-                 <div>
-                    <h3 className="text-xl font-headline font-semibold mb-4">Unpaid Bills</h3>
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                         {unpaidBills.length > 0 ? (
-                            unpaidBills.map(bill => (
-                                <BillCard key={bill.id} bill={bill} onPayBill={onPayBill} />
-                            ))
-                        ) : (
-                            <div className="col-span-full text-center text-muted-foreground py-10">
-                                <Card className="border-dashed">
-                                    <CardHeader>
-                                        <CardTitle>No Unpaid Bills</CardTitle>
-                                        <CardDescription>
-                                        There are currently no unpaid bills assigned to you.
                                         </CardDescription>
                                     </CardHeader>
                                 </Card>
@@ -324,6 +299,17 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
+
+    {billingModalState.isOpen && billingModalState.bill && (
+        <BillingModal
+            isOpen={billingModalState.isOpen}
+            onClose={handleCloseBillingModal}
+            bill={billingModalState.bill}
+            onPayBill={handlePayBillFromModal}
+            orders={orders.filter(o => billingModalState.bill?.orderIds.includes(o.id))}
+            menuItems={menuItems}
+        />
+    )}
     </>
   );
 }

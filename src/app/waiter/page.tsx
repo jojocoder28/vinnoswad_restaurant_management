@@ -148,7 +148,7 @@ export default function WaiterPage() {
     }
   };
   
-  const handleCreateBill = async (tableNumber: number, waiterId: string) => {
+  const handleCreateBill = async (tableNumber: number, waiterId: string): Promise<Bill | void> => {
     try {
         const newBill = await createBillForTable(tableNumber, waiterId);
         setBills(prev => [newBill, ...prev]);
@@ -158,6 +158,7 @@ export default function WaiterPage() {
             title: "Bill Generated",
             description: `Bill for table ${tableNumber} has been created.`
         });
+        return newBill;
     } catch (error) {
          toast({
             title: "Error Generating Bill",
