@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useEffect, useRef } from 'react';
 import type { Bill, Order, MenuItem } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import QRCode from 'qrcode';
 import { Check } from 'lucide-react';
+import QRCode from "react-qr-code";
+
 
 interface BillingModalProps {
     isOpen: boolean;
@@ -19,22 +19,13 @@ interface BillingModalProps {
 }
 
 export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders, menuItems }: BillingModalProps) {
-    const qrCodeRef = useRef<HTMLCanvasElement>(null);
     const YOUR_UPI_ID = "dasjojo7-1@okicici";
-
-    useEffect(() => {
-        if (isOpen && bill && qrCodeRef.current) {
-            const upiString = `upi://pay?pa=${YOUR_UPI_ID}&pn=EateryFlow&am=${bill.total.toFixed(2)}&cu=INR&tn=Bill for Table ${bill.tableNumber}`;
-            QRCode.toCanvas(qrCodeRef.current, upiString, { width: 256, errorCorrectionLevel: 'H' }, (error) => {
-                if (error) console.error("Could not generate QR code:", error);
-            });
-        }
-    }, [isOpen, bill]);
 
     if (!isOpen || !bill) {
         return null;
     }
-
+    
+    const upiString = `upi://pay?pa=${YOUR_UPI_ID}&pn=EateryFlow&am=${bill.total.toFixed(2)}&cu=INR&tn=Bill for Table ${bill.tableNumber}`;
     const allItems = orders.flatMap(order => order.items);
 
     return (
@@ -47,8 +38,8 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="my-4 flex flex-col items-center justify-center gap-4">
-                    <canvas ref={qrCodeRef} />
+                <div className="my-4 flex flex-col items-center justify-center gap-4 bg-white p-4 rounded-lg">
+                    <QRCode value={upiString} size={256} />
                     <p className="text-sm text-muted-foreground">Or pay to UPI ID: <span className="font-semibold text-primary">{YOUR_UPI_ID}</span></p>
                 </div>
                 
