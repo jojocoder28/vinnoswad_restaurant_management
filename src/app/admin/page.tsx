@@ -2,8 +2,8 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Order, MenuItem, Waiter, DecodedToken, User, UserStatus, UserRole } from '@/lib/types';
-import { getOrders, getMenuItems, getWaiters, getUsers, updateUserStatus, deleteUser, registerUser } from '../actions';
+import type { Order, MenuItem, Waiter, DecodedToken, User, UserStatus, UserRole, Table } from '@/lib/types';
+import { getOrders, getMenuItems, getWaiters, getUsers, updateUserStatus, deleteUser, registerUser, getTables } from '../actions';
 import AdminView from '@/components/admin-view';
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from '@/components/dashboard-layout';
@@ -16,6 +16,7 @@ export default function AdminPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [waiters, setWaiters] = useState<Waiter[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<DecodedToken | null>(null);
   const { toast } = useToast();
@@ -26,11 +27,12 @@ export default function AdminPage() {
     async function fetchData() {
       try {
         setLoading(true);
-        const [ordersData, menuItemsData, waitersData, usersData, session] = await Promise.all([
+        const [ordersData, menuItemsData, waitersData, usersData, tablesData, session] = await Promise.all([
           getOrders(),
           getMenuItems(),
           getWaiters(),
           getUsers(),
+          getTables(),
           getSession()
         ]);
         
@@ -44,6 +46,7 @@ export default function AdminPage() {
         setMenuItems(menuItemsData);
         setWaiters(waitersData);
         setUsers(usersData);
+        setTables(tablesData);
       } catch (error) {
         console.error("Failed to fetch data:", error);
         toast({
@@ -140,6 +143,7 @@ export default function AdminPage() {
             menuItems={menuItems} 
             waiters={waiters} 
             users={users}
+            tables={tables}
             onUpdateUserStatus={handleUpdateUserStatus}
             onDeleteUser={handleDeleteUser}
             onCreateUser={handleCreateUser}

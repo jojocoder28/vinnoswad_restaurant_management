@@ -1,18 +1,20 @@
 
 "use client";
 
-import type { Order, MenuItem, Waiter, User, UserStatus, DecodedToken } from '@/lib/types';
+import type { Order, MenuItem, Waiter, User, UserStatus, DecodedToken, Table } from '@/lib/types';
 import StatsCards from './stats-cards';
 import RevenueCharts from './revenue-charts';
 import { useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserManagement from './user-management';
+import LiveStatusDashboard from './live-status-dashboard';
 
 interface AdminViewProps {
   orders: Order[];
   menuItems: MenuItem[];
   waiters: Waiter[];
   users: User[];
+  tables: Table[];
   onUpdateUserStatus: (userId: string, status: UserStatus) => void;
   onDeleteUser: (userId: string) => void;
   onCreateUser: (userData: Omit<User, 'id' | 'status'>) => void;
@@ -24,6 +26,7 @@ export default function AdminView({
     menuItems, 
     waiters, 
     users, 
+    tables,
     onUpdateUserStatus, 
     onDeleteUser,
     onCreateUser, 
@@ -46,9 +49,10 @@ export default function AdminView({
 
   return (
     <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:w-fit">
+        <TabsList className="grid w-full grid-cols-3 md:w-fit">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="users">User Management</TabsTrigger>
+            <TabsTrigger value="status">Restaurant Status</TabsTrigger>
+            <TabsTrigger value="users">Staff & Users</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-6 space-y-8">
@@ -62,6 +66,15 @@ export default function AdminView({
             <RevenueCharts orders={servedOrders} menuItems={menuItems} waiters={waiters} />
         </TabsContent>
         
+        <TabsContent value="status" className="mt-6">
+            <LiveStatusDashboard
+                orders={orders}
+                menuItems={menuItems}
+                waiters={waiters}
+                tables={tables}
+            />
+        </TabsContent>
+
         <TabsContent value="users" className="mt-6">
             <UserManagement 
                 users={users}

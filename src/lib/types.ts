@@ -36,7 +36,7 @@ export interface Table {
   id: string;
   tableNumber: number;
   status: 'available' | 'occupied';
-  waiterId?: string | null;
+  waiterId: string | null;
 }
 
 export interface User {
