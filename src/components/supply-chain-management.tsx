@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import type { Supplier, StockItem, PurchaseOrder, MenuItem, MenuItemIngredient } from '@/lib/types';
+import type { Supplier, StockItem, PurchaseOrder, MenuItem } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,11 +12,9 @@ import { MoreHorizontal, PlusCircle, Pencil, Trash2, CheckCircle } from 'lucide-
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 import StockItemForm from './stock-item-form';
+import SupplierForm from './supplier-form';
 import MenuItemRecipeForm from './menu-item-recipe-form';
 import PurchaseOrderForm from './purchase-order-form';
-
-// Dummy forms for now. In a real app, these would be proper modals with forms.
-const SupplierForm = () => <div>Supplier Form Placeholder</div>;
 
 
 interface SupplyChainManagementProps {
@@ -53,14 +51,13 @@ export default function SupplyChainManagement({
     
     const [isStockItemFormOpen, setIsStockItemFormOpen] = useState(false);
     const [editingStockItem, setEditingStockItem] = useState<StockItem | null>(null);
+    const [isSupplierFormOpen, setIsSupplierFormOpen] = useState(false);
+    const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
     const [isRecipeFormOpen, setIsRecipeFormOpen] = useState(false);
     const [editingRecipeItem, setEditingRecipeItem] = useState<MenuItem | null>(null);
     const [isPurchaseOrderFormOpen, setIsPurchaseOrderFormOpen] = useState(false);
 
 
-    // These would be implemented with state and modals
-    const handleAddSupplierClick = () => alert("To be implemented: Add Supplier Form");
-    
     const handleOpenStockItemForm = (item: StockItem | null = null) => {
         setEditingStockItem(item);
         setIsStockItemFormOpen(true);
@@ -79,6 +76,24 @@ export default function SupplyChainManagement({
         }
     };
     
+    const handleOpenSupplierForm = (supplier: Supplier | null = null) => {
+        setEditingSupplier(supplier);
+        setIsSupplierFormOpen(true);
+    };
+
+    const handleCloseSupplierForm = () => {
+        setEditingSupplier(null);
+        setIsSupplierFormOpen(false);
+    };
+
+    const handleSaveSupplier = (data: Omit<Supplier, 'id'> | Supplier) => {
+        if ('id' in data) {
+            onUpdateSupplier(data);
+        } else {
+            onAddSupplier(data);
+        }
+    };
+
     const handleEditRecipeClick = (item: MenuItem) => {
         setEditingRecipeItem(item);
         setIsRecipeFormOpen(true);
@@ -145,8 +160,12 @@ export default function SupplyChainManagement({
                                              <DropdownMenu>
                                                 <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
                                                 <DropdownMenuContent>
-                                                    <DropdownMenuItem onClick={() => handleOpenStockItemForm(item)}>Edit</DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive" onClick={() => onDeleteStockItem(item.id)}>Delete</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleOpenStockItemForm(item)}>
+                                                        <Pencil className="mr-2 h-4 w-4"/>Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-destructive" onClick={() => onDeleteStockItem(item.id)}>
+                                                        <Trash2 className="mr-2 h-4 w-4"/>Delete
+                                                    </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -258,7 +277,7 @@ export default function SupplyChainManagement({
                                 <CardTitle className="font-headline">Suppliers</CardTitle>
                                 <CardDescription>Manage your vendors.</CardDescription>
                             </div>
-                            <Button onClick={handleAddSupplierClick}>
+                            <Button onClick={() => handleOpenSupplierForm()}>
                                 <PlusCircle className="mr-2"/> Add Supplier
                             </Button>
                         </div>
@@ -271,6 +290,7 @@ export default function SupplyChainManagement({
                                     <TableHead>Name</TableHead>
                                     <TableHead>Contact</TableHead>
                                     <TableHead>Phone</TableHead>
+                                    <TableHead>Email</TableHead>
                                     <TableHead className="w-[50px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -280,12 +300,17 @@ export default function SupplyChainManagement({
                                         <TableCell>{s.name}</TableCell>
                                         <TableCell>{s.contactPerson || 'N/A'}</TableCell>
                                         <TableCell>{s.phone}</TableCell>
+                                        <TableCell>{s.email || 'N/A'}</TableCell>
                                         <TableCell>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
                                                 <DropdownMenuContent>
-                                                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleOpenSupplierForm(s)}>
+                                                        <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-destructive" onClick={() => onDeleteSupplier(s.id)}>
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                    </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -304,6 +329,13 @@ export default function SupplyChainManagement({
             onClose={handleCloseStockItemForm}
             onSave={handleSaveStockItem}
             item={editingStockItem}
+        />
+        
+        <SupplierForm
+            isOpen={isSupplierFormOpen}
+            onClose={handleCloseSupplierForm}
+            onSave={handleSaveSupplier}
+            supplier={editingSupplier}
         />
 
         {editingRecipeItem && (
@@ -326,3 +358,5 @@ export default function SupplyChainManagement({
         </>
     );
 }
+
+    
