@@ -157,8 +157,25 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
     }
     
     const handlePrint = () => {
-        window.print();
-    }
+        const printContent = document.getElementById('printable-bill');
+        if (printContent) {
+            const newWindow = window.open('', '', 'height=800,width=800');
+            if (newWindow) {
+                newWindow.document.write('<html><head><title>Print Bill</title>');
+                // You can include a link to your stylesheet or inline styles here
+                newWindow.document.write('<style>body { font-family: sans-serif; margin: 20px; } table { width: 100%; border-collapse: collapse; } th, td { padding: 4px; text-align: left; } .text-center { text-align: center; } .text-right { text-align: right; } .font-mono { font-family: monospace; } .font-bold { font-weight: bold; } .text-sm { font-size: 0.875rem; } .text-xs { font-size: 0.75rem; } .mt-2 { margin-top: 0.5rem; } .mt-4 { margin-top: 1rem; } .mb-2 { margin-bottom: 0.5rem; } .my-4 { margin-top: 1rem; margin-bottom: 1rem; } .border-b { border-bottom: 1px dashed black; } .border { border: 1px solid #ccc; } .p-2 { padding: 0.5rem; } .rounded-md { border-radius: 0.375rem; } .flex { display: flex; } .flex-col { flex-direction: column; } .items-center { align-items: center; } .gap-2 { gap: 0.5rem; } .justify-between { justify-content: space-between; } .relative { position: relative; } .inset-0 { top: 0; right: 0; bottom: 0; left: 0; } .transform { transform: rotate(-12deg); } .text-8xl { font-size: 6rem; } .text-green-500\\/30 { color: rgba(34, 197, 94, 0.3); } .border-green-500\\/30 { border-color: rgba(34, 197, 94, 0.3); } .border-4 { border-width: 4px; } .p-8 { padding: 2rem; } .rounded-lg { border-radius: 0.5rem; } </style>')
+                newWindow.document.write('</head><body>');
+                newWindow.document.write(printContent.innerHTML);
+                newWindow.document.write('</body></html>');
+                newWindow.document.close();
+                newWindow.focus();
+                setTimeout(() => {
+                    newWindow.print();
+                    newWindow.close();
+                }, 250);
+            }
+        }
+    };
 
     if (!isOpen || !bill) {
         return null;
@@ -168,36 +185,39 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-lg print:max-w-none print:border-none print:shadow-none">
-                 <div id="printable-bill" className="hidden print:block text-black relative">
+            <DialogContent className="sm:max-w-lg">
+                 {/* This is the hidden, styled-for-print div */}
+                 <div id="printable-bill" className="hidden">
                     {isPaid && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-8xl font-bold text-green-500/30 border-4 border-green-500/30 rounded-lg p-8 transform -rotate-12">
-                                PAID
-                            </span>
+                        <div className="relative">
+                             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-12deg)', zIndex: 10 }}>
+                                <span style={{ fontSize: '6rem', fontWeight: 'bold', color: 'rgba(34, 197, 94, 0.3)', border: '4px solid rgba(34, 197, 94, 0.3)', borderRadius: '0.5rem', padding: '2rem' }}>
+                                    PAID
+                                </span>
+                            </div>
                         </div>
                     )}
                     <div className="flex flex-col items-center text-center">
-                        <Logo className="w-16 h-16"/>
-                        <h2 className="font-bold text-xl mt-2">Vinnoswad Restaurant</h2>
+                        {/* The logo component won't work here, so we use a placeholder or text */}
+                        <h2 style={{fontWeight: 'bold', fontSize: '1.25rem', marginTop: '0.5rem' }}>Vinnoswad Restaurant</h2>
                         <p className="text-sm">117-NH, Sarisha Ashram More, Diamond Harbour</p>
                         <p className="text-sm">South 24 Parganas, PIN - 743368, WB, INDIA</p>
                         <p className="text-sm">GSTIN: 29GGGGG1314G1Z4</p>
                     </div>
-                    <Separator className="my-4 border-dashed border-black" />
+                    <hr className="my-4 border-b" />
                     <div className="text-xs">
                         <p><strong>Bill No:</strong> {bill.id.slice(-6)}</p>
                         <p><strong>Table:</strong> {bill.tableNumber}</p>
                         <p><strong>Date:</strong> {format(new Date(bill.timestamp), "dd-MMM-yyyy hh:mm a")}</p>
                     </div>
-                     <Separator className="my-4 border-dashed border-black" />
+                     <hr className="my-4 border-b" />
                      <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b border-dashed border-black">
-                                <th className="text-left pb-2 font-semibold">Item</th>
-                                <th className="text-center pb-2 font-semibold">Qty</th>
-                                <th className="text-right pb-2 font-semibold">Price</th>
-                                <th className="text-right pb-2 font-semibold">Amount</th>
+                            <tr className="border-b">
+                                <th className="text-left pb-2 font-bold">Item</th>
+                                <th className="text-center pb-2 font-bold">Qty</th>
+                                <th className="text-right pb-2 font-bold">Price</th>
+                                <th className="text-right pb-2 font-bold">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -211,8 +231,8 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                             ))}
                         </tbody>
                      </table>
-                     <Separator className="my-4 border-dashed border-black" />
-                     <div className="text-sm space-y-2">
+                     <hr className="my-4 border-b" />
+                     <div className="text-sm" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
                         <div className="flex justify-between">
                             <span>Subtotal</span>
                             <span className="font-mono">₹{bill.subtotal.toFixed(2)}</span>
@@ -221,16 +241,16 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                             <span>Tax (10%)</span>
                             <span className="font-mono">₹{bill.tax.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between font-bold text-base mt-1">
+                        <div className="flex justify-between font-bold" style={{fontSize: '1rem', marginTop: '0.25rem'}}>
                             <span>Grand Total</span>
                             <span className="font-mono">₹{bill.total.toFixed(2)}</span>
                         </div>
                      </div>
-                     <Separator className="my-4 border-dashed border-black" />
+                     <hr className="my-4 border-b" />
                       {!isPaid && (
                         <div className="flex flex-col items-center gap-2 mt-4">
-                            <p className="text-xs font-semibold">Scan to Pay</p>
-                            <div className="bg-white p-2 rounded-md border">
+                            <p className="text-xs font-bold">Scan to Pay</p>
+                            <div style={{background: 'white', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #ccc'}}>
                                 <QRCode value={upiUri} size={100} />
                             </div>
                         </div>
@@ -260,8 +280,8 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                                 <h4 className="font-semibold mb-2">Order Summary:</h4>
                                 {finalItems.map((item, index) => (
                                     <div key={`${item.menuItemId}-${index}`} className="flex justify-between">
-                                        <span>{item.quantity}x {item.name}</span>
-                                        <span className="font-mono">₹{(item.price * item.quantity).toFixed(2)}</span>
+                                        <span className="break-all pr-2">{item.quantity}x {item.name}</span>
+                                        <span className="font-mono text-right">₹{(item.price * item.quantity).toFixed(2)}</span>
                                     </div>
                                 ))}
                             </div>
