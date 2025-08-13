@@ -69,7 +69,7 @@ export default function ManagerView({
       if (orderDate === today) {
         const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
         dailyItemsOrdered += itemCount;
-        if (order.status === 'served') {
+        if (order.status === 'served' || order.status === 'billed') {
           dailyItemsServed += itemCount;
         }
       }
