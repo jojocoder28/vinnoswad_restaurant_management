@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import type { Order, MenuItem, DecodedToken, Waiter } from '@/lib/types';
+import type { Order, MenuItem, DecodedToken, Waiter, OrderStatus } from '@/lib/types';
 import {
   getOrders,
   updateOrderStatus,
@@ -62,7 +62,7 @@ export default function KitchenPage() {
   }, [toast, router]);
 
 
-  const handleUpdateOrderStatus = async (orderId: string, status: Order['status']) => {
+  const handleUpdateOrderStatus = async (orderId: string, status: OrderStatus) => {
     try {
       await updateOrderStatus(orderId, status);
       const ordersData = await getOrders();

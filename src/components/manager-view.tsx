@@ -4,14 +4,14 @@
 import type { Order, MenuItem, OrderStatus, Waiter } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ChefHat, Bell, Utensils, Package, Clock, ShieldAlert, XCircle } from 'lucide-react';
+import { CheckCircle, ChefHat, Utensils, Package, Clock, ShieldAlert, XCircle } from 'lucide-react';
 import OrderCard from './order-card';
 import MenuManagement from './menu-management';
 import { useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import CancelOrderForm from './cancel-order-form';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
 
 
@@ -55,7 +55,6 @@ export default function ManagerView({
   const pendingOrders = useMemo(() => orders.filter(o => o.status === 'pending'), [orders]);
   const approvedOrders = useMemo(() => orders.filter(o => o.status === 'approved'), [orders]);
   const preparedOrders = useMemo(() => orders.filter(o => o.status === 'prepared'), [orders]);
-  const readyOrders = useMemo(() => orders.filter(o => o.status === 'ready'), [orders]);
   const cancelledOrders = useMemo(() => orders.filter(o => o.status === 'cancelled'), [orders]);
 
   const getWaiterName = (waiterId: string) => waiters.find(w => w.id === waiterId)?.name || "Unknown";
@@ -119,12 +118,6 @@ export default function ManagerView({
                     </DropdownMenu>
                 </div>
             );
-        case 'prepared':
-            return (
-                <Button className="w-full" onClick={() => setConfirmation({ orderId: order.id, status: 'ready', message: `This will notify ${getWaiterName(order.waiterId)} to pick up the order for Table ${order.tableNumber}.` })}>
-                    <Bell className="mr-2 h-4 w-4" /> Notify Waiter
-                </Button>
-            );
         case 'approved':
              return (
                  <DropdownMenu>
@@ -140,7 +133,7 @@ export default function ManagerView({
                     </DropdownMenuContent>
                 </DropdownMenu>
              );
-        case 'ready':
+        case 'prepared':
              return (
                 <span className='text-sm text-muted-foreground'>Waiting for waiter...</span>
              );
@@ -195,31 +188,6 @@ export default function ManagerView({
         </div>
 
         <div>
-          <h3 className="text-xl font-headline font-semibold mb-4">Ready for Pickup</h3>
-           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {preparedOrders.length > 0 ? (
-              preparedOrders.map(order => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  menuItems={menuItems}
-                  waiterName={getWaiterName(order.waiterId)}
-                  actions={renderOrderActions(order)}
-                />
-              ))
-            ) : (
-                <Card className="col-span-full border-dashed">
-                    <CardHeader className="text-center">
-                        <CardTitle>No Orders Ready</CardTitle>
-                        <CardDescription>No orders are ready for pickup from the kitchen.</CardDescription>
-                    </CardHeader>
-                </Card>
-            )}
-          </div>
-        </div>
-
-
-        <div>
           <h3 className="text-xl font-headline font-semibold mb-4">In the Kitchen</h3>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {approvedOrders.length > 0 ? (
@@ -242,12 +210,12 @@ export default function ManagerView({
             )}
           </div>
         </div>
-
+        
         <div>
-          <h3 className="text-xl font-headline font-semibold mb-4">Waiting for Service</h3>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {readyOrders.length > 0 ? (
-              readyOrders.map(order => (
+          <h3 className="text-xl font-headline font-semibold mb-4">Ready to Serve</h3>
+           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {preparedOrders.length > 0 ? (
+              preparedOrders.map(order => (
                 <OrderCard
                   key={order.id}
                   order={order}
@@ -259,7 +227,7 @@ export default function ManagerView({
             ) : (
                 <Card className="col-span-full border-dashed">
                     <CardHeader className="text-center">
-                        <CardTitle>All Orders Picked Up</CardTitle>
+                        <CardTitle>No Orders Ready</CardTitle>
                         <CardDescription>No orders are currently waiting to be served.</CardDescription>
                     </CardHeader>
                 </Card>

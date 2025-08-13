@@ -43,6 +43,7 @@ export default function UserProfileModal({ isOpen, onClose, user, orders, menuIt
         const waiterOrders = orders.filter(o => o.waiterId === waiterProfile.id);
         const totalOrders = waiterOrders.length;
         const totalRevenue = waiterOrders.reduce((total, order) => {
+            if (order.status !== 'served') return total;
             const orderTotal = order.items.reduce((sum, item) => {
                 return sum + (item.price * item.quantity);
             }, 0);
@@ -78,7 +79,7 @@ export default function UserProfileModal({ isOpen, onClose, user, orders, menuIt
     
     const kitchenPerformance = useMemo(() => {
         if(user.role !== 'kitchen') return null;
-        const preparedOrders = orders.filter(o => o.status === 'prepared' || o.status === 'ready' || o.status === 'served');
+        const preparedOrders = orders.filter(o => o.status === 'prepared' || o.status === 'served');
         const totalItemsPrepared = preparedOrders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
         
         return {

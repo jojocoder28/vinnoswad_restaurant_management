@@ -1,5 +1,5 @@
 
-export type OrderStatus = 'pending' | 'approved' | 'prepared' | 'ready' | 'served' | 'cancelled';
+export type OrderStatus = 'pending' | 'approved' | 'prepared' | 'served' | 'cancelled';
 export type UserRole = 'admin' | 'manager' | 'waiter' | 'kitchen';
 export type UserStatus = 'pending' | 'approved';
 

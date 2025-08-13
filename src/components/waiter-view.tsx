@@ -99,7 +99,7 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
                         menuItems={menuItems}
                         waiterName={selectedWaiter?.name || 'Unknown'}
                         actions={
-                            order.status === 'ready' ? (
+                            order.status === 'prepared' ? (
                             <Button className="w-full" onClick={() => setConfirmation({ orderId: order.id, status: 'served', message: `This will mark the order for Table ${order.tableNumber} as served and complete the transaction.` })}>
                                 <Utensils className="mr-2 h-4 w-4"/> Mark as Served
                             </Button>

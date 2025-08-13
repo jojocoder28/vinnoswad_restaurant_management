@@ -67,7 +67,7 @@ export default function KitchenView({
                     <div className='w-full flex flex-col gap-2'>
                         <Button
                             className="w-full"
-                            onClick={() => setConfirmation({ orderId: order.id, status: 'prepared', message: `This will mark the order for Table ${order.tableNumber} as prepared and ready for pickup.` })}
+                            onClick={() => setConfirmation({ orderId: order.id, status: 'prepared', message: `This will mark the order for Table ${order.tableNumber} as prepared and notify the waiter.` })}
                         >
                             <ChefHat className="mr-2 h-4 w-4" /> Mark as Prepared
                         </Button>
