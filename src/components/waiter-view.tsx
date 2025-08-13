@@ -104,7 +104,8 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
 
   const handlePayBillFromModal = (billId: string) => {
     onPayBill(billId);
-    handleCloseBillingModal();
+    // We keep the modal open to allow printing the 'PAID' receipt.
+    // The user can close it manually.
   }
 
 
@@ -358,3 +359,4 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
     </>
   );
 }
+ 
