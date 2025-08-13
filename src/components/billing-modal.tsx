@@ -334,7 +334,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                             <Printer className="mr-2 h-4 w-4"/> {isPaid ? 'Print Paid Receipt' : 'Print Bill'}
                         </Button>
                         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-                            <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>Close</Button>
+                            {/* <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>Close</Button> */}
                             {!isRazorpayConfigured && !isPaid && (
                                 <Button type="button" onClick={handleManualPayment} disabled={loading}>
                                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4"/>}
