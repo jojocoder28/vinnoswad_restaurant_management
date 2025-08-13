@@ -3,11 +3,14 @@
 
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/mongodb';
-import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus, OrderItem, Bill, BillStatus, ReportData, OrderReport, Supplier, StockItem, PurchaseOrder, PurchaseStatus } from '@/lib/types';
+import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus, OrderItem, Bill, BillStatus, ReportData, OrderReport, Supplier, StockItem, PurchaseOrder, PurchaseStatus, RazorpayOrder } from '@/lib/types';
 import { Collection, ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { encrypt, getSession } from '@/lib/auth';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
+
 
 async function getCollection<T extends { id?: string }>(collectionName: string): Promise<Collection<Omit<T, 'id'>>> {
     const { db } = await connectToDatabase();
@@ -612,4 +615,59 @@ export async function updatePurchaseOrderStatus(id: string, status: PurchaseStat
         }
     }
     revalidatePath('/admin');
+}
+
+
+// Payment Gateway Actions
+
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID!,
+    key_secret: process.env.RAZORPAY_KEY_SECRET!,
+});
+
+export async function createRazorpayOrder(amount: number, receiptId: string): Promise<RazorpayOrder> {
+    const options = {
+        amount: amount * 100, // Amount in the smallest currency unit (paise)
+        currency: "INR",
+        receipt: receiptId,
+    };
+    try {
+        const order = await razorpay.orders.create(options);
+        return order;
+    } catch (error) {
+        console.error("Razorpay order creation failed:", error);
+        throw new Error("Failed to create payment order.");
+    }
+}
+
+export async function verifyRazorpayPayment(data: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+}): Promise<void> {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = data;
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+
+    const expectedSignature = crypto
+        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+        .update(body.toString())
+        .digest('hex');
+
+    const isAuthentic = expectedSignature === razorpay_signature;
+
+    if (!isAuthentic) {
+        throw new Error("Invalid payment signature.");
+    }
+    
+    // The payment is authentic. Now, fetch the order from the database
+    // using the receiptId which we stored as the razorpay_order_id's `receipt`.
+    const orderInfo = await razorpay.orders.fetch(razorpay_order_id);
+    const billId = orderInfo.receipt;
+    
+    if (!billId) {
+        throw new Error("Bill ID not found in Razorpay order.");
+    }
+
+    // Mark the bill as paid in the database
+    await markBillAsPaid(billId);
 }

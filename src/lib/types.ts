@@ -147,3 +147,18 @@ export interface ReportData {
     waiters: Waiter[];
   }
 }
+
+// Payment Gateway Types
+export interface RazorpayOrder {
+    id: string;
+    entity: string;
+    amount: number;
+    amount_paid: number;
+    amount_due: number;
+    currency: string;
+    receipt: string;
+    status: 'created' | 'attempted' | 'paid';
+    attempts: number;
+    notes: any[];
+    created_at: number;
+}

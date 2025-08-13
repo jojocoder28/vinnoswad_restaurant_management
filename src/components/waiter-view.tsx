@@ -352,6 +352,7 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
             onPayBill={handlePayBillFromModal}
             orders={orders.filter(o => activeBill?.orderIds.includes(o.id))}
             menuItems={menuItems}
+            currentUser={currentUser}
         />
     )}
     </>

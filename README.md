@@ -26,6 +26,7 @@ This application is built with Next.js, React, Tailwind CSS, and ShadCN UI compo
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/)
 - **Database:** [MongoDB](https://www.mongodb.com/)
 - **Image Hosting:** [Cloudinary](https://cloudinary.com/)
+- **Payments:** [Razorpay](https://razorpay.com/)
 - **Authentication:** JWT-based session management
 
 ## Getting Started
@@ -36,6 +37,7 @@ This application is built with Next.js, React, Tailwind CSS, and ShadCN UI compo
 - npm or yarn
 - A MongoDB database instance (local or cloud-based like MongoDB Atlas)
 - A Cloudinary account (a free account is sufficient)
+- A Razorpay account for payment processing.
 
 ### Installation & Setup
 
@@ -51,7 +53,7 @@ This application is built with Next.js, React, Tailwind CSS, and ShadCN UI compo
     ```
 
 3.  **Set up environment variables:**
-    Create a file named `.env.local` in the root of the project and add your MongoDB connection string, a JWT secret, and your Cloudinary credentials. You can find your Cloudinary details in your account dashboard.
+    Create a file named `.env.local` in the root of the project and add your secrets.
 
     ```.env.local
     # MongoDB
@@ -64,6 +66,11 @@ This application is built with Next.js, React, Tailwind CSS, and ShadCN UI compo
     CLOUDINARY_CLOUD_NAME="your_cloudinary_cloud_name"
     CLOUDINARY_API_KEY="your_cloudinary_api_key"
     CLOUDINARY_API_SECRET="your_cloudinary_api_secret"
+
+    # Razorpay (Go to Settings -> API Keys in your Razorpay dashboard)
+    # The KEY_ID is public and can be prefixed with NEXT_PUBLIC_
+    NEXT_PUBLIC_RAZORPAY_KEY_ID="your_razorpay_key_id"
+    RAZORPAY_KEY_SECRET="your_razorpay_key_secret"
     ```
 
 4.  **Run the development server:**

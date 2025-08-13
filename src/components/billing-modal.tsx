@@ -1,14 +1,17 @@
 
 "use client";
 
-import type { Bill, Order, MenuItem } from '@/lib/types';
+import type { Bill, Order, MenuItem, DecodedToken, RazorpayOrder } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Check, AlertTriangle } from 'lucide-react';
-import QRCode from "react-qr-code";
+import { Check, IndianRupee, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { useEffect, useState } from 'react';
+import { createRazorpayOrder, verifyRazorpayPayment } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
+declare const Razorpay: any;
 
 interface BillingModalProps {
     isOpen: boolean;
@@ -17,21 +20,13 @@ interface BillingModalProps {
     onPayBill: (billId: string) => void;
     orders: Order[];
     menuItems: MenuItem[];
+    currentUser: DecodedToken;
 }
 
-// Configuration: Replace with your actual UPI ID and recipient name.
-const YOUR_UPI_ID = "restaurant@upi";
-const YOUR_UPI_NAME = "Vinnoswad Restaurant";
+export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders, menuItems, currentUser }: BillingModalProps) {
+    const [loading, setLoading] = useState(false);
+    const { toast } = useToast();
 
-export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders, menuItems }: BillingModalProps) {
-
-    if (!isOpen || !bill) {
-        return null;
-    }
-    
-    // This creates a standard UPI intent QR code string.
-    const upiString = `upi://pay?pa=${YOUR_UPI_ID}&pn=${encodeURIComponent(YOUR_UPI_NAME)}&am=${bill.total.toFixed(2)}&cu=INR&tn=Bill for Table ${bill.tableNumber}`;
-    
     // Consolidate all items from the billed orders for display.
     const allItems = orders.flatMap(order => 
         order.items.map(item => {
@@ -56,20 +51,86 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
     
     const finalItems = Array.from(groupedItems.values());
 
+    const handlePayment = async () => {
+        if (!bill) return;
+        setLoading(true);
+
+        try {
+            // 1. Create a Razorpay Order on the server
+            const razorpayOrder = await createRazorpayOrder(bill.total, bill.id);
+            if (!razorpayOrder) {
+                throw new Error("Could not create Razorpay order.");
+            }
+
+            // 2. Configure and open Razorpay Checkout
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                amount: razorpayOrder.amount,
+                currency: razorpayOrder.currency,
+                name: "Vinnoswad Restaurant",
+                description: `Bill for Table ${bill.tableNumber}`,
+                order_id: razorpayOrder.id,
+                handler: async function (response: any) {
+                    // 3. Verify the payment on the server
+                    try {
+                        await verifyRazorpayPayment({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                        });
+                        
+                        // 4. If verification is successful, mark the bill as paid
+                        onPayBill(bill.id);
+                        toast({ title: "Payment Successful!", description: "The bill has been marked as paid." });
+                        onClose();
+
+                    } catch (verifyError) {
+                         const errorMessage = verifyError instanceof Error ? verifyError.message : "Payment verification failed.";
+                         toast({ title: "Verification Failed", description: errorMessage, variant: "destructive" });
+                    }
+                },
+                prefill: {
+                    name: "Customer",
+                    email: "customer@example.com",
+                    contact: "9999999999",
+                },
+                notes: {
+                    billId: bill.id,
+                    tableNumber: bill.tableNumber,
+                },
+                theme: {
+                    color: "#008080", // Matches the app's primary color
+                },
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.open();
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+            toast({
+                title: "Payment Error",
+                description: errorMessage,
+                variant: "destructive"
+            });
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    if (!isOpen || !bill) {
+        return null;
+    }
+
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle className="font-headline text-2xl">Bill for Table {bill.tableNumber}</DialogTitle>
                     <DialogDescription>
-                        Present this to the customer for UPI payment.
+                        Review the bill and proceed to payment.
                     </DialogDescription>
                 </DialogHeader>
-
-                <div className="my-4 flex flex-col items-center justify-center gap-4 bg-white p-4 rounded-lg">
-                    <QRCode value={upiString} size={256} />
-                    <p className="text-sm text-muted-foreground">Scan to pay: <span className="font-semibold text-primary">₹{bill.total.toFixed(2)}</span></p>
-                </div>
                 
                 <Separator />
                 
@@ -100,20 +161,11 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                     </div>
                 </div>
 
-                <Alert variant="destructive" className="bg-amber-50 border-amber-200 text-amber-800 [&>svg]:text-amber-600">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle className="font-semibold">Manual Confirmation Required</AlertTitle>
-                    <AlertDescription>
-                        After the customer has paid, click the button below to confirm and close the table.
-                    </AlertDescription>
-                </Alert>
-
-
                 <DialogFooter className="mt-4">
-                    <Button type="button" variant="ghost" onClick={onClose}>Close</Button>
-                    <Button type="button" onClick={() => onPayBill(bill.id)}>
-                        <Check className="mr-2 h-4 w-4"/>
-                        Confirm Payment Received
+                    <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>Close</Button>
+                    <Button type="button" onClick={handlePayment} disabled={loading}>
+                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <IndianRupee className="mr-2 h-4 w-4"/>}
+                        {loading ? 'Processing...' : 'Pay with Razorpay'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
