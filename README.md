@@ -1,3 +1,4 @@
+
 # Vinnoswad - Restaurant Management System
 
 Vinnoswad is a comprehensive, modern restaurant management system designed to streamline operations from order taking to billing. Built with a focus on efficiency and user experience, it provides distinct interfaces for different staff roles, ensuring a smooth workflow for the entire restaurant.
@@ -14,6 +15,7 @@ This application is built with Next.js, React, Tailwind CSS, and ShadCN UI compo
 - **Real-time Order Management:** A seamless flow from order creation by the waiter, to approval by the manager, preparation in the kitchen, and finally serving and billing.
 - **Live Table Management:** A dynamic grid view of all restaurant tables, showing their current status (available/occupied) and which waiter is assigned to them.
 - **Instant UPI Payments:** Generate bills with a scannable QR code that customers can use to pay the exact amount via any UPI app.
+- **Cloudinary Image Management:** Menu item images are uploaded and managed via Cloudinary, providing fast, optimized image delivery.
 - **Reporting & Analytics:** Admins can generate and download detailed CSV reports for orders, bills, and user data for any date range.
 
 ## Tech Stack
@@ -23,6 +25,7 @@ This application is built with Next.js, React, Tailwind CSS, and ShadCN UI compo
 - **UI Components:** [ShadCN UI](https://ui.shadcn.com/)
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/)
 - **Database:** [MongoDB](https://www.mongodb.com/)
+- **Image Hosting:** [Cloudinary](https://cloudinary.com/)
 - **Authentication:** JWT-based session management
 
 ## Getting Started
@@ -32,6 +35,7 @@ This application is built with Next.js, React, Tailwind CSS, and ShadCN UI compo
 - Node.js (v18 or later)
 - npm or yarn
 - A MongoDB database instance (local or cloud-based like MongoDB Atlas)
+- A Cloudinary account (a free account is sufficient)
 
 ### Installation & Setup
 
@@ -47,11 +51,19 @@ This application is built with Next.js, React, Tailwind CSS, and ShadCN UI compo
     ```
 
 3.  **Set up environment variables:**
-    Create a file named `.env.local` in the root of the project and add your MongoDB connection string and a JWT secret.
+    Create a file named `.env.local` in the root of the project and add your MongoDB connection string, a JWT secret, and your Cloudinary credentials. You can find your Cloudinary details in your account dashboard.
 
     ```.env.local
+    # MongoDB
     MONGODB_URI="your_mongodb_connection_string"
+
+    # JWT
     JWT_SECRET="your_super_secret_jwt_key_that_is_at_least_32_characters_long"
+
+    # Cloudinary
+    CLOUDINARY_CLOUD_NAME="your_cloudinary_cloud_name"
+    CLOUDINARY_API_KEY="your_cloudinary_api_key"
+    CLOUDINARY_API_SECRET="your_cloudinary_api_secret"
     ```
 
 4.  **Run the development server:**

@@ -5,12 +5,14 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { MenuItem } from '@/lib/types';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 interface MenuItemFormProps {
   isOpen: boolean;
@@ -23,37 +25,83 @@ const menuItemSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters'),
   category: z.string().min(3, 'Category must be at least 3 characters'),
   price: z.coerce.number().positive('Price must be a positive number'),
-  imageUrl: z.string().url('Please enter a valid image URL').optional().or(z.literal('')),
+  image: z.any().optional(),
 });
 
 export default function MenuItemForm({ isOpen, onClose, onSave, item }: MenuItemFormProps) {
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
   const form = useForm<z.infer<typeof menuItemSchema>>({
     resolver: zodResolver(menuItemSchema),
   });
   
   useEffect(() => {
-    form.reset(item || {
+    form.reset(item ? {
+      name: item.name,
+      category: item.category,
+      price: item.price,
+    } : {
       name: '',
       category: '',
       price: 0,
-      imageUrl: '',
+      image: undefined,
     });
   }, [item, form]);
 
 
-  const onSubmit = (values: z.infer<typeof menuItemSchema>) => {
-    const finalValues = {
-        ...values,
-        imageUrl: values.imageUrl || `https://placehold.co/400x300.png?text=${values.name.replace(/\s/g, '+')}`,
-    };
+  const onSubmit = async (values: z.infer<typeof menuItemSchema>) => {
+    setLoading(true);
+    try {
+      let imageUrl = item?.imageUrl; // Keep the existing image if no new one is uploaded
 
-    if (item) {
-      onSave({ ...item, ...finalValues });
-    } else {
-      // For new items, default availability to true
-      onSave({ ...finalValues, isAvailable: true });
+      // If a new image file is selected, upload it
+      if (values.image && values.image.length > 0) {
+        const file = values.image[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Image upload failed');
+        }
+        imageUrl = result.url;
+      }
+
+      // If it's a new item and no image was uploaded or existed, use a placeholder
+      if (!imageUrl) {
+        imageUrl = `https://placehold.co/400x300.png?text=${values.name.replace(/\s/g, '+')}`;
+      }
+
+      const finalValues = {
+        name: values.name,
+        category: values.category,
+        price: values.price,
+        imageUrl: imageUrl,
+      };
+
+      if (item) {
+        onSave({ ...item, ...finalValues });
+      } else {
+        onSave({ ...finalValues, isAvailable: true });
+      }
+      onClose();
+
+    } catch (error) {
+       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+       toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-    onClose();
   };
 
   return (
@@ -106,23 +154,32 @@ export default function MenuItemForm({ isOpen, onClose, onSave, item }: MenuItem
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
-              name="imageUrl"
+              name="image"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Image URL</FormLabel>
+                  <FormLabel>Image</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://example.com/image.png" {...field} />
+                    <Input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => field.onChange(e.target.files)}
+                    />
                   </FormControl>
-                   <FormDescription>Leave blank to use a placeholder image.</FormDescription>
+                  <FormDescription>
+                    {item ? 'Leave blank to keep the current image.' : 'Upload an image for the menu item.'}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-              <Button type="submit">Save Item</Button>
+              <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>Cancel</Button>
+              <Button type="submit" disabled={loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {loading ? 'Saving...' : 'Save Item'}
+              </Button>
             </DialogFooter>
           </form>
         </Form>
