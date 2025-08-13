@@ -23,15 +23,15 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
     const YOUR_UPI_ID = "dasjojo7-1@okicici";
 
     useEffect(() => {
-        if (isOpen && qrCodeRef.current && bill) {
+        if (isOpen && bill && qrCodeRef.current) {
             const upiString = `upi://pay?pa=${YOUR_UPI_ID}&pn=EateryFlow&am=${bill.total.toFixed(2)}&cu=INR&tn=Bill for Table ${bill.tableNumber}`;
             QRCode.toCanvas(qrCodeRef.current, upiString, { width: 256, errorCorrectionLevel: 'H' }, (error) => {
                 if (error) console.error("Could not generate QR code:", error);
             });
         }
-    }, [isOpen, bill, YOUR_UPI_ID]);
+    }, [isOpen, bill]);
 
-    if (!bill) {
+    if (!isOpen || !bill) {
         return null;
     }
 
@@ -95,4 +95,3 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
         </Dialog>
     );
 }
-
