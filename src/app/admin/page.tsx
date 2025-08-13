@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import type { Order, MenuItem, Waiter, DecodedToken, User, UserStatus, UserRole, Table } from '@/lib/types';
-import { getOrders, getMenuItems, getWaiters, getUsers, updateUserStatus, deleteUser, registerUser, getTables } from '../actions';
+import { getOrders, getMenuItems, getWaiters, getUsers, updateUserStatus, deleteUser, registerUser, getTables, addMenuItem, updateMenuItem, deleteMenuItem } from '../actions';
 import AdminView from '@/components/admin-view';
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from '@/components/dashboard-layout';
@@ -125,6 +125,59 @@ export default function AdminPage() {
     }
   };
 
+  const handleAddMenuItem = async (itemData: Omit<MenuItem, 'id'>) => {
+    try {
+      const newItem = await addMenuItem(itemData);
+      setMenuItems(prev => [...prev, newItem]);
+      toast({
+        title: "Menu Item Added",
+        description: `${newItem.name} has been added to the menu.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add menu item.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateMenuItem = async (updatedItem: MenuItem) => {
+    try {
+      await updateMenuItem(updatedItem);
+      setMenuItems(prev => prev.map(item => (item.id === updatedItem.id ? updatedItem : item)));
+       toast({
+        title: "Menu Item Updated",
+        description: `${updatedItem.name} has been updated.`,
+      });
+    } catch(error) {
+        toast({
+        title: "Error",
+        description: "Failed to update menu item.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteMenuItem = async (itemId: string) => {
+    try {
+      await deleteMenuItem(itemId);
+      setMenuItems(prev => prev.filter(item => item.id !== itemId));
+       toast({
+        title: "Menu Item Deleted",
+        description: `An item has been removed from the menu.`,
+        variant: 'destructive'
+      });
+    } catch (error) {
+        toast({
+        title: "Error",
+        description: "Failed to delete menu item.",
+        variant: "destructive",
+      });
+    }
+  };
+
+
   if (loading || !user) {
     return (
         <DashboardLayout user={user}>
@@ -147,6 +200,9 @@ export default function AdminPage() {
             onUpdateUserStatus={handleUpdateUserStatus}
             onDeleteUser={handleDeleteUser}
             onCreateUser={handleCreateUser}
+            onAddMenuItem={handleAddMenuItem}
+            onUpdateMenuItem={handleUpdateMenuItem}
+            onDeleteMenuItem={handleDeleteMenuItem}
             currentUser={user}
         />
     </DashboardLayout>

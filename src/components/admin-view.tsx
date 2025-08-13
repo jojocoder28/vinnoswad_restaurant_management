@@ -11,6 +11,7 @@ import LiveStatusDashboard from './live-status-dashboard';
 import ServedOrdersList from './served-orders-list';
 import CancelledOrdersList from './cancelled-orders-list';
 import ReportGenerator from './report-generator';
+import MenuManagement from './menu-management';
 
 interface AdminViewProps {
   orders: Order[];
@@ -21,6 +22,9 @@ interface AdminViewProps {
   onUpdateUserStatus: (userId: string, status: UserStatus) => void;
   onDeleteUser: (userId: string) => void;
   onCreateUser: (userData: Omit<User, 'id' | 'status'>) => void;
+  onAddMenuItem: (item: Omit<MenuItem, 'id'>) => void;
+  onUpdateMenuItem: (item: MenuItem) => void;
+  onDeleteMenuItem: (id: string) => void;
   currentUser: DecodedToken;
 }
 
@@ -33,6 +37,9 @@ export default function AdminView({
     onUpdateUserStatus, 
     onDeleteUser,
     onCreateUser, 
+    onAddMenuItem,
+    onUpdateMenuItem,
+    onDeleteMenuItem,
     currentUser 
 }: AdminViewProps) {
   const servedOrders = useMemo(() => orders.filter(o => o.status === 'served' || o.status === 'billed'), [orders]);
@@ -52,9 +59,10 @@ export default function AdminView({
 
   return (
     <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 md:w-fit">
+        <TabsList className="grid w-full grid-cols-6 md:w-fit">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="status">Restaurant Status</TabsTrigger>
+            <TabsTrigger value="menu">Menu</TabsTrigger>
             <TabsTrigger value="history">Order History</TabsTrigger>
             <TabsTrigger value="users">Staff & Users</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -77,6 +85,16 @@ export default function AdminView({
                 menuItems={menuItems}
                 waiters={waiters}
                 tables={tables}
+            />
+        </TabsContent>
+
+        <TabsContent value="menu" className="mt-6">
+            <MenuManagement
+                menuItems={menuItems}
+                onAddMenuItem={onAddMenuItem}
+                onUpdateMenuItem={onUpdateMenuItem}
+                onDeleteMenuItem={onDeleteMenuItem}
+                currentUserRole={currentUser.role}
             />
         </TabsContent>
 

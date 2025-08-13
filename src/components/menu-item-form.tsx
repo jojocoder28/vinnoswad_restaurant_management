@@ -1,9 +1,11 @@
+
 "use client";
 
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { MenuItem } from '@/lib/types';
+import { useEffect } from 'react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -21,23 +23,35 @@ const menuItemSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters'),
   category: z.string().min(3, 'Category must be at least 3 characters'),
   price: z.coerce.number().positive('Price must be a positive number'),
+  imageUrl: z.string().url('Please enter a valid image URL').optional().or(z.literal('')),
 });
 
 export default function MenuItemForm({ isOpen, onClose, onSave, item }: MenuItemFormProps) {
   const form = useForm<z.infer<typeof menuItemSchema>>({
     resolver: zodResolver(menuItemSchema),
-    defaultValues: item || {
+  });
+  
+  useEffect(() => {
+    form.reset(item || {
       name: '',
       category: '',
       price: 0,
-    },
-  });
+      imageUrl: '',
+    });
+  }, [item, form]);
+
 
   const onSubmit = (values: z.infer<typeof menuItemSchema>) => {
+    const finalValues = {
+        ...values,
+        imageUrl: values.imageUrl || `https://placehold.co/400x300.png?text=${values.name.replace(/\s/g, '+')}`,
+    };
+
     if (item) {
-      onSave({ ...item, ...values });
+      onSave({ ...item, ...finalValues });
     } else {
-      onSave(values);
+      // For new items, default availability to true
+      onSave({ ...finalValues, isAvailable: true });
     }
     onClose();
   };
@@ -73,7 +87,7 @@ export default function MenuItemForm({ isOpen, onClose, onSave, item }: MenuItem
                 <FormItem>
                   <FormLabel>Category</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Main, Appetizer" {...field} />
+                    <Input placeholder="e.g. Main Course, Appetizer, Dessert" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -88,6 +102,20 @@ export default function MenuItemForm({ isOpen, onClose, onSave, item }: MenuItem
                   <FormControl>
                     <Input type="number" step="0.01" placeholder="e.g. 12.50" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image URL</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://example.com/image.png" {...field} />
+                  </FormControl>
+                   <FormDescription>Leave blank to use a placeholder image.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

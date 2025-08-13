@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { MenuItem, Order, Table, OrderItem } from '@/lib/types';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,9 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
       items: [{ menuItemId: '', quantity: 1 }],
     },
   });
+
+  const availableMenuItems = useMemo(() => menuItems.filter(item => item.isAvailable), [menuItems]);
+
 
   useEffect(() => {
     if (editingOrder) {
@@ -149,7 +152,7 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {menuItems.map(item => (
+                              {availableMenuItems.map(item => (
                                 <SelectItem key={item.id} value={item.id}>
                                   {item.name} - ₹{item.price.toFixed(2)}
                                 </SelectItem>

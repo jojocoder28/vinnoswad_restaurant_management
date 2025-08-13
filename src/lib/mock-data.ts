@@ -21,16 +21,17 @@ export const initialWaiters: Omit<Waiter, 'id' | 'userId'>[] = [
   { name: 'Rohan Mehta' },
 ];
 
-export const initialMenuItems: MenuItem[] = [
-  { id: 'ITEM-001', name: 'Margherita Pizza', price: 12.50, category: 'Main' },
-  { id: 'ITEM-002', name: 'Caesar Salad', price: 8.00, category: 'Appetizer' },
-  { id: 'ITEM-003', name: 'Spaghetti Carbonara', price: 15.00, category: 'Main' },
-  { id: 'ITEM-004', name: 'Tiramisu', price: 6.50, category: 'Dessert' },
-  { id: 'ITEM-005', name: 'Bruschetta', price: 7.00, category: 'Appetizer' },
-  { id: 'ITEM-006', name: 'Grilled Salmon', price: 18.00, category: 'Main' },
-  { id: 'ITEM-007', name: 'Coke', price: 2.50, category: 'Drink' },
-  { id: 'ITEM-008', name: 'Water', price: 1.00, category: 'Drink' },
+export const initialMenuItems: Omit<MenuItem, "id">[] = [
+  { name: 'Margherita Pizza', price: 12.50, category: 'Main Course', imageUrl: 'https://placehold.co/400x300.png', isAvailable: true },
+  { name: 'Caesar Salad', price: 8.00, category: 'Starters', imageUrl: 'https://placehold.co/400x300.png', isAvailable: true },
+  { name: 'Spaghetti Carbonara', price: 15.00, category: 'Main Course', imageUrl: 'https://placehold.co/400x300.png', isAvailable: true },
+  { name: 'Tiramisu', price: 6.50, category: 'Desserts', imageUrl: 'https://placehold.co/400x300.png', isAvailable: true },
+  { name: 'Bruschetta', price: 7.00, category: 'Starters', imageUrl: 'https://placehold.co/400x300.png', isAvailable: true },
+  { name: 'Grilled Salmon', price: 18.00, category: 'Main Course', imageUrl: 'https://placehold.co/400x300.png', isAvailable: false },
+  { name: 'Coke', price: 2.50, category: 'Drinks', imageUrl: 'https://placehold.co/400x300.png', isAvailable: true },
+  { name: 'Water', price: 1.00, category: 'Drinks', imageUrl: 'https://placehold.co/400x300.png', isAvailable: true },
 ];
+
 
 export const initialOrders: Order[] = [];
 

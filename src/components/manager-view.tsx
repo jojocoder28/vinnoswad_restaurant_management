@@ -241,6 +241,7 @@ export default function ManagerView({
           onAddMenuItem={onAddMenuItem}
           onUpdateMenuItem={onUpdateMenuItem}
           onDeleteMenuItem={onDeleteMenuItem}
+          currentUserRole='manager'
         />
       </TabsContent>
        <TabsContent value="cancelled" className="mt-6">

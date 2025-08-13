@@ -346,6 +346,7 @@ export async function addMenuItem(itemData: Omit<MenuItem, 'id'>): Promise<MenuI
     const menuItemsCollection = await getCollection<MenuItem>('menu');
     const result = await menuItemsCollection.insertOne(itemData);
     revalidatePath('/manager');
+    revalidatePath('/admin');
     return mapId<MenuItem>({ ...itemData, _id: result.insertedId });
 }
 
@@ -357,12 +358,14 @@ export async function updateMenuItem(updatedItem: MenuItem): Promise<void> {
         { $set: dataToUpdate }
     );
     revalidatePath('/manager');
+    revalidatePath('/admin');
 }
 
 export async function deleteMenuItem(itemId: string): Promise<void> {
     const menuItemsCollection = await getCollection<MenuItem>('menu');
     await menuItemsCollection.deleteOne({ _id: new ObjectId(itemId) });
     revalidatePath('/manager');
+    revalidatePath('/admin');
 }
 
 // Waiter Actions
@@ -472,7 +475,7 @@ export async function getReportData(startDate: string, endDate: string): Promise
     });
 
     // Calculate overall stats from filtered data
-    const servedOrders = filteredOrders.filter(o => o.status === 'served');
+    const servedOrders = filteredOrders.filter(o => o.status === 'served' || o.status === 'billed');
     const totalRevenue = servedOrders.reduce((total, order) => 
         total + order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0), 0);
 
