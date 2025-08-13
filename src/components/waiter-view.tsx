@@ -2,27 +2,49 @@
 "use client";
 
 import React, { useMemo, useState } from 'react';
-import type { Order, MenuItem, Waiter, OrderStatus, Table, DecodedToken, OrderItem } from '@/lib/types';
+import type { Order, MenuItem, Waiter, OrderStatus, Table, DecodedToken, OrderItem, Bill } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Utensils, ShieldAlert } from 'lucide-react';
+import { PlusCircle, Utensils, ShieldAlert, FileText, Check } from 'lucide-react';
 import OrderCard from './order-card';
 import OrderForm from './order-form';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 
 
 interface WaiterViewProps {
   orders: Order[];
+  bills: Bill[];
   menuItems: MenuItem[];
   waiters: Waiter[];
   tables: Table[];
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
   onCreateOrder: (order: Omit<Order, 'id' | 'timestamp' | 'status' | 'items'> & { items: Omit<OrderItem, 'price'>[] }, tableId: string) => void;
+  onCreateBill: (tableNumber: number, waiterId: string) => void;
+  onPayBill: (billId: string) => void;
   currentUser: DecodedToken;
 }
 
-export default function WaiterView({ orders, menuItems, waiters, tables, onUpdateStatus, onCreateOrder, currentUser }: WaiterViewProps) {
+const BillCard = ({ bill, onPayBill }: { bill: Bill, onPayBill: (billId: string) => void }) => (
+    <Card>
+        <CardHeader>
+            <CardTitle className="flex justify-between items-center">
+                <span>Table {bill.tableNumber}</span>
+                <span className="font-mono text-lg">₹{bill.total.toFixed(2)}</span>
+            </CardTitle>
+            <CardDescription>
+                Subtotal: ₹{bill.subtotal.toFixed(2)} + Tax: ₹{bill.tax.toFixed(2)}
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+             <Button className="w-full" onClick={() => onPayBill(bill.id)}>
+                <Check className="mr-2 h-4 w-4" /> Mark as Paid
+            </Button>
+        </CardContent>
+    </Card>
+);
+
+export default function WaiterView({ orders, bills, menuItems, waiters, tables, onUpdateStatus, onCreateOrder, onCreateBill, onPayBill, currentUser }: WaiterViewProps) {
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
   const [confirmation, setConfirmation] = useState<{ orderId: string, status: OrderStatus, message: string } | null>(null);
 
@@ -31,26 +53,43 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
     return waiters.find(w => w.userId === currentUser.id);
   }, [waiters, currentUser]);
 
-  const { activeOrders, servedOrders } = useMemo(() => {
-    if (!selectedWaiter) return { activeOrders: [], servedOrders: [] };
+  const { activeOrders, orderHistory } = useMemo(() => {
+    if (!selectedWaiter) return { activeOrders: [], orderHistory: [] };
     const active: Order[] = [];
-    const served: Order[] = [];
+    const history: Order[] = [];
     orders.forEach(order => {
       if (order.waiterId === selectedWaiter.id) {
-        if (order.status === 'served' || order.status === 'cancelled') {
-          served.push(order);
+        if (['served', 'cancelled', 'billed'].includes(order.status)) {
+          history.push(order);
         } else {
           active.push(order);
         }
       }
     });
-    return { activeOrders: active.sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()), servedOrders: served.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) };
+    return { 
+        activeOrders: active.sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()), 
+        orderHistory: history.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) 
+    };
   }, [orders, selectedWaiter]);
   
   const availableTables = useMemo(() => {
     if (!selectedWaiter) return [];
     return tables.filter(table => table.status === 'available' || table.waiterId === selectedWaiter.id);
   }, [tables, selectedWaiter]);
+
+  const tablesToBill = useMemo(() => {
+    if (!selectedWaiter) return [];
+    const tableNumbersWithServedOrders = new Set(
+        orders.filter(o => o.status === 'served' && o.waiterId === selectedWaiter.id).map(o => o.tableNumber)
+    );
+    return Array.from(tableNumbersWithServedOrders);
+  }, [orders, selectedWaiter]);
+  
+  const unpaidBills = useMemo(() => {
+      if (!selectedWaiter) return [];
+      return bills.filter(b => b.status === 'unpaid' && b.waiterId === selectedWaiter.id);
+  }, [bills, selectedWaiter]);
+
 
   const handleConfirm = () => {
     if (confirmation) {
@@ -84,9 +123,10 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
       </div>
 
        <Tabs defaultValue="active" className="w-full">
-            <TabsList>
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="active">Active Orders</TabsTrigger>
-              <TabsTrigger value="served">Order History</TabsTrigger>
+              <TabsTrigger value="billing">Billing</TabsTrigger>
+              <TabsTrigger value="history">Order History</TabsTrigger>
             </TabsList>
 
             <TabsContent value="active" className="mt-4">
@@ -121,11 +161,66 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
                     )}
                 </div>
             </TabsContent>
+
+            <TabsContent value="billing" className="mt-4 space-y-8">
+                <div>
+                    <h3 className="text-xl font-headline font-semibold mb-4">Tables Ready to Bill</h3>
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {tablesToBill.length > 0 ? (
+                            tablesToBill.map(tableNum => (
+                                <Card key={tableNum}>
+                                    <CardHeader>
+                                        <CardTitle>Table {tableNum}</CardTitle>
+                                        <CardDescription>This table has served orders ready for billing.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Button className="w-full" onClick={() => onCreateBill(tableNum, selectedWaiter.id)}>
+                                            <FileText className="mr-2 h-4 w-4"/> Generate Bill
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            ))
+                        ) : (
+                            <div className="col-span-full text-center text-muted-foreground py-10">
+                                <Card className="border-dashed">
+                                    <CardHeader>
+                                        <CardTitle>No Tables to Bill</CardTitle>
+                                        <CardDescription>
+                                        There are no tables with served orders waiting to be billed.
+                                        </CardDescription>
+                                    </CardHeader>
+                                </Card>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                 <div>
+                    <h3 className="text-xl font-headline font-semibold mb-4">Unpaid Bills</h3>
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                         {unpaidBills.length > 0 ? (
+                            unpaidBills.map(bill => (
+                                <BillCard key={bill.id} bill={bill} onPayBill={onPayBill} />
+                            ))
+                        ) : (
+                            <div className="col-span-full text-center text-muted-foreground py-10">
+                                <Card className="border-dashed">
+                                    <CardHeader>
+                                        <CardTitle>No Unpaid Bills</CardTitle>
+                                        <CardDescription>
+                                        There are currently no unpaid bills assigned to you.
+                                        </CardDescription>
+                                    </CardHeader>
+                                </Card>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </TabsContent>
             
-            <TabsContent value="served" className="mt-4">
+            <TabsContent value="history" className="mt-4">
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {servedOrders.length > 0 ? (
-                    servedOrders.map(order => (
+                    {orderHistory.length > 0 ? (
+                    orderHistory.map(order => (
                         <OrderCard
                             key={order.id}
                             order={order}
@@ -137,9 +232,9 @@ export default function WaiterView({ orders, menuItems, waiters, tables, onUpdat
                      <div className="col-span-full text-center text-muted-foreground py-10">
                         <Card className="border-dashed">
                             <CardHeader>
-                                <CardTitle>No Served Orders</CardTitle>
+                                <CardTitle>No Order History</CardTitle>
                                 <CardDescription>
-                                You have not served any orders yet.
+                                You have no past orders to display yet.
                                 </CardDescription>
                             </CardHeader>
                         </Card>

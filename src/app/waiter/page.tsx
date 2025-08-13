@@ -2,14 +2,17 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import type { Order, MenuItem, Waiter, Table, DecodedToken, OrderItem } from '@/lib/types';
+import type { Order, MenuItem, Waiter, Table, DecodedToken, OrderItem, Bill } from '@/lib/types';
 import {
   getOrders,
   createOrder,
   updateOrderStatus,
   getMenuItems,
   getWaiters,
-  getTables
+  getTables,
+  getBills,
+  createBillForTable,
+  markBillAsPaid
 } from '../actions';
 
 import WaiterView from '@/components/waiter-view';
@@ -21,6 +24,7 @@ import LoadingSpinner from '@/components/ui/loading-spinner';
 
 export default function WaiterPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [bills, setBills] = useState<Bill[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [waiters, setWaiters] = useState<Waiter[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
@@ -33,11 +37,12 @@ export default function WaiterPage() {
     async function fetchData() {
       try {
         setLoading(true);
-        const [ordersData, menuItemsData, waitersData, tablesData, session] = await Promise.all([
+        const [ordersData, menuItemsData, waitersData, tablesData, billsData, session] = await Promise.all([
           getOrders(),
           getMenuItems(),
           getWaiters(),
           getTables(),
+          getBills(),
           getSession(),
         ]);
         
@@ -51,6 +56,7 @@ export default function WaiterPage() {
         setMenuItems(menuItemsData);
         setWaiters(waitersData);
         setTables(tablesData);
+        setBills(billsData);
       } catch (error) {
         console.error("Failed to fetch data:", error);
         toast({
@@ -101,6 +107,45 @@ export default function WaiterPage() {
       });
     }
   };
+  
+  const handleCreateBill = async (tableNumber: number, waiterId: string) => {
+    try {
+        const newBill = await createBillForTable(tableNumber, waiterId);
+        setBills(prev => [newBill, ...prev]);
+        const updatedOrders = await getOrders();
+        setOrders(updatedOrders);
+        toast({
+            title: "Bill Generated",
+            description: `Bill for table ${tableNumber} has been created.`
+        });
+    } catch (error) {
+         toast({
+            title: "Error Generating Bill",
+            description: "Could not create bill. Ensure there are served orders.",
+            variant: "destructive"
+        });
+    }
+  }
+
+  const handlePayBill = async (billId: string) => {
+    try {
+        await markBillAsPaid(billId);
+        const [updatedBills, updatedTables] = await Promise.all([getBills(), getTables()]);
+        setBills(updatedBills);
+        setTables(updatedTables);
+        toast({
+            title: "Payment Recorded",
+            description: "Bill has been marked as paid and table is now available.",
+        });
+    } catch (error) {
+         toast({
+            title: "Error",
+            description: "Failed to mark bill as paid.",
+            variant: "destructive"
+        });
+    }
+  }
+
 
   if (loading || !user) {
     return (
@@ -117,11 +162,14 @@ export default function WaiterPage() {
         <h1 className="font-headline text-3xl md:text-4xl font-bold">Waiter Dashboard</h1>
         <WaiterView
             orders={orders}
+            bills={bills}
             menuItems={menuItems}
             waiters={waiters}
             tables={tables}
             onUpdateStatus={handleUpdateOrderStatus}
             onCreateOrder={handleCreateOrder}
+            onCreateBill={handleCreateBill}
+            onPayBill={handlePayBill}
             currentUser={user}
             />
     </DashboardLayout>

@@ -4,7 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/mongodb';
 import { initialMenuItems, initialOrders, initialWaiters, initialTables, initialUsers } from '@/lib/mock-data';
-import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus, OrderItem } from '@/lib/types';
+import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus, OrderItem, Bill, BillStatus } from '@/lib/types';
 import { Collection, ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
@@ -21,7 +21,9 @@ async function seedCollection<T extends { id?: string }>(collectionName: string,
     if (count === 0 && data.length > 0) {
         // We are dropping the ID from the mock data, and letting Mongo create it
         const documents = data.map(({ id, ...rest }) => rest);
-        await collection.insertMany(documents as any[]);
+        if (documents.length > 0) {
+           await collection.insertMany(documents as any[]);
+        }
     }
 }
 
@@ -206,7 +208,7 @@ async function freeUpTableIfNeeded(tableNumber: number, waiterId: string) {
         const otherOrdersCount = await ordersCollection.countDocuments({
             tableNumber: table.tableNumber,
             waiterId: waiterId,
-            status: { $nin: ['served', 'cancelled'] },
+            status: { $nin: ['served', 'cancelled', 'billed'] },
         });
 
         if (otherOrdersCount === 0) {
@@ -332,4 +334,79 @@ export async function getWaiters(): Promise<Waiter[]> {
     const waitersCollection = await getCollection<Waiter>('waiters');
     const waiters = await waitersCollection.find().toArray();
     return waiters.map(waiter => mapId<Waiter>(waiter));
+}
+
+// Bill Actions
+export async function getBills(): Promise<Bill[]> {
+    const billsCollection = await getCollection<Bill>('bills');
+    const bills = await billsCollection.find().sort({ timestamp: -1 }).toArray();
+    return bills.map(bill => mapId<Bill>(bill));
+}
+
+export async function createBillForTable(tableNumber: number, waiterId: string): Promise<Bill> {
+    const ordersCollection = await getCollection<Order>('orders');
+    const billsCollection = await getCollection<Bill>('bills');
+    
+    const ordersToBill = await ordersCollection.find({
+        tableNumber,
+        waiterId,
+        status: 'served'
+    }).toArray();
+
+    if (ordersToBill.length === 0) {
+        throw new Error("No served orders found for this table to bill.");
+    }
+
+    const subtotal = ordersToBill.reduce((sum, order) => {
+        const orderTotal = order.items.reduce((itemSum, item) => itemSum + (item.price * item.quantity), 0);
+        return sum + orderTotal;
+    }, 0);
+
+    const TAX_RATE = 0.10; // 10% tax
+    const tax = subtotal * TAX_RATE;
+    const total = subtotal + tax;
+
+    const newBill: Omit<Bill, 'id'> = {
+        tableNumber,
+        orderIds: ordersToBill.map(o => o._id.toHexString()),
+        waiterId,
+        subtotal,
+        tax,
+        total,
+        status: 'unpaid',
+        timestamp: new Date().toISOString(),
+    };
+
+    const result = await billsCollection.insertOne(newBill);
+    const newBillId = result.insertedId;
+
+    // Update orders to 'billed' status
+    await ordersCollection.updateMany(
+        { _id: { $in: ordersToBill.map(o => o._id) } },
+        { $set: { status: 'billed' } }
+    );
+
+    revalidatePath('/waiter');
+    return mapId<Bill>({ ...newBill, _id: newBillId });
+}
+
+export async function markBillAsPaid(billId: string): Promise<void> {
+    const billsCollection = await getCollection<Bill>('bills');
+    const tablesCollection = await getCollection<Table>('tables');
+
+    await billsCollection.updateOne(
+        { _id: new ObjectId(billId) },
+        { $set: { status: 'paid' } }
+    );
+
+    const bill = await billsCollection.findOne({ _id: new ObjectId(billId) });
+    if (bill) {
+        await tablesCollection.updateOne(
+            { tableNumber: bill.tableNumber },
+            { $set: { status: 'available', waiterId: null } }
+        );
+    }
+    
+    revalidatePath('/waiter');
+    revalidatePath('/admin');
 }

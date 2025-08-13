@@ -1,7 +1,9 @@
 
-export type OrderStatus = 'pending' | 'approved' | 'prepared' | 'served' | 'cancelled';
+
+export type OrderStatus = 'pending' | 'approved' | 'prepared' | 'served' | 'cancelled' | 'billed';
 export type UserRole = 'admin' | 'manager' | 'waiter' | 'kitchen';
 export type UserStatus = 'pending' | 'approved';
+export type BillStatus = 'unpaid' | 'paid';
 
 export interface MenuItem {
   id: string;
@@ -24,6 +26,18 @@ export interface Order {
   waiterId: string;
   timestamp: string;
   cancellationReason?: string;
+}
+
+export interface Bill {
+    id: string;
+    tableNumber: number;
+    orderIds: string[];
+    waiterId: string;
+    subtotal: number;
+    tax: number;
+    total: number;
+    status: BillStatus;
+    timestamp: string;
 }
 
 export interface Waiter {
