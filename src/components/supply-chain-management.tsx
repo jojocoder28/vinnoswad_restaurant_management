@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { Supplier, StockItem, PurchaseOrder, MenuItem, MenuItemIngredient } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -11,10 +11,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, PlusCircle, Pencil, Trash2, CheckCircle } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
+import StockItemForm from './stock-item-form';
 
 // Dummy forms for now. In a real app, these would be proper modals with forms.
 const SupplierForm = () => <div>Supplier Form Placeholder</div>;
-const StockItemForm = () => <div>Stock Item Form Placeholder</div>;
 const PurchaseOrderForm = () => <div>Purchase Order Form Placeholder</div>;
 const MenuItemRecipeForm = () => <div>Menu Item Recipe Form Placeholder</div>;
 
@@ -50,15 +50,37 @@ export default function SupplyChainManagement({
     onReceivePurchaseOrder,
     onUpdateMenuItem,
 }: SupplyChainManagementProps) {
+    
+    const [isStockItemFormOpen, setIsStockItemFormOpen] = useState(false);
+    const [editingStockItem, setEditingStockItem] = useState<StockItem | null>(null);
+
 
     // These would be implemented with state and modals
     const handleAddSupplierClick = () => alert("To be implemented: Add Supplier Form");
-    const handleAddStockItemClick = () => alert("To be implemented: Add Stock Item Form");
     const handleAddPurchaseOrderClick = () => alert("To be implemented: Add Purchase Order Form");
     const handleEditRecipeClick = (item: MenuItem) => alert(`To be implemented: Edit recipe for ${item.name}`);
+    
+    const handleOpenStockItemForm = (item: StockItem | null = null) => {
+        setEditingStockItem(item);
+        setIsStockItemFormOpen(true);
+    }
+    
+    const handleCloseStockItemForm = () => {
+        setEditingStockItem(null);
+        setIsStockItemFormOpen(false);
+    }
+
+    const handleSaveStockItem = (itemData: Omit<StockItem, 'id'> | StockItem) => {
+        if ('id' in itemData) {
+            onUpdateStockItem(itemData);
+        } else {
+            onAddStockItem(itemData);
+        }
+    };
 
 
     return (
+        <>
         <Tabs defaultValue="stock" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="stock">Stock Levels</TabsTrigger>
@@ -75,7 +97,7 @@ export default function SupplyChainManagement({
                                 <CardTitle className="font-headline">Stock Items</CardTitle>
                                 <CardDescription>Manage raw ingredients and supplies.</CardDescription>
                             </div>
-                            <Button onClick={handleAddStockItemClick}>
+                            <Button onClick={() => handleOpenStockItemForm()}>
                                 <PlusCircle className="mr-2"/> Add Stock Item
                             </Button>
                         </div>
@@ -256,5 +278,13 @@ export default function SupplyChainManagement({
                 </Card>
             </TabsContent>
         </Tabs>
+
+        <StockItemForm
+            isOpen={isStockItemFormOpen}
+            onClose={handleCloseStockItemForm}
+            onSave={handleSaveStockItem}
+            item={editingStockItem}
+        />
+        </>
     );
 }
