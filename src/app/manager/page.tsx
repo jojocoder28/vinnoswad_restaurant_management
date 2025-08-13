@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import type { Order, MenuItem, DecodedToken, Waiter } from '@/lib/types';
+import type { Order, MenuItem, DecodedToken, Waiter, Bill, Table, OrderItem } from '@/lib/types';
 import {
   getOrders,
   updateOrderStatus,
@@ -11,7 +11,11 @@ import {
   updateMenuItem,
   deleteMenuItem,
   getWaiters,
-  cancelOrder
+  cancelOrder,
+  getBills,
+  createBillForTable,
+  markBillAsPaid,
+  getTables
 } from '../actions';
 
 import ManagerView from '@/components/manager-view';
@@ -23,8 +27,10 @@ import LoadingSpinner from '@/components/ui/loading-spinner';
 
 export default function ManagerPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [bills, setBills] = useState<Bill[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [waiters, setWaiters] = useState<Waiter[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<DecodedToken | null>(null);
   const { toast } = useToast();
@@ -34,10 +40,12 @@ export default function ManagerPage() {
     async function fetchData() {
       try {
         setLoading(true);
-        const [ordersData, menuItemsData, waitersData, session] = await Promise.all([
+        const [ordersData, menuItemsData, waitersData, billsData, tablesData, session] = await Promise.all([
           getOrders(),
           getMenuItems(),
           getWaiters(),
+          getBills(),
+          getTables(),
           getSession(),
         ]);
         
@@ -50,6 +58,8 @@ export default function ManagerPage() {
         setOrders(ordersData);
         setMenuItems(menuItemsData);
         setWaiters(waitersData);
+        setBills(billsData);
+        setTables(tablesData);
       } catch (error) {
         console.error("Failed to fetch data:", error);
         toast({
@@ -154,6 +164,45 @@ export default function ManagerPage() {
     }
   };
 
+  const handleCreateBill = async (tableNumber: number, waiterId: string): Promise<Bill | void> => {
+    try {
+        const newBill = await createBillForTable(tableNumber, waiterId);
+        setBills(prev => [newBill, ...prev]);
+        const updatedOrders = await getOrders();
+        setOrders(updatedOrders);
+        toast({
+            title: "Bill Generated",
+            description: `Bill for table ${tableNumber} has been created.`
+        });
+        return newBill;
+    } catch (error) {
+         toast({
+            title: "Error Generating Bill",
+            description: "Could not create bill. Ensure there are served orders.",
+            variant: "destructive"
+        });
+    }
+  }
+
+  const handlePayBill = async (billId: string) => {
+    try {
+        await markBillAsPaid(billId);
+        const [updatedBills, updatedTables] = await Promise.all([getBills(), getTables()]);
+        setBills(updatedBills);
+        setTables(updatedTables);
+        toast({
+            title: "Payment Recorded",
+            description: "Bill has been marked as paid and table is now available.",
+        });
+    } catch (error) {
+         toast({
+            title: "Error",
+            description: "Failed to mark bill as paid.",
+            variant: "destructive"
+        });
+    }
+  }
+
   if (loading || !user) {
     return (
         <DashboardLayout user={user}>
@@ -169,13 +218,18 @@ export default function ManagerPage() {
         <h1 className="font-headline text-3xl md:text-4xl font-bold">Manager Dashboard</h1>
          <ManagerView
             orders={orders}
+            bills={bills}
             menuItems={menuItems}
             waiters={waiters}
+            tables={tables}
             onUpdateStatus={handleUpdateOrderStatus}
             onCancelOrder={handleCancelOrder}
             onAddMenuItem={handleAddMenuItem}
             onUpdateMenuItem={handleUpdateMenuItem}
             onDeleteMenuItem={handleDeleteMenuItem}
+            onCreateBill={handleCreateBill}
+            onPayBill={handlePayBill}
+            currentUser={user}
           />
     </DashboardLayout>
   );

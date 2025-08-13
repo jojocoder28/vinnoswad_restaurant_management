@@ -1,10 +1,10 @@
 
 "use client";
 
-import type { Order, MenuItem, OrderStatus, Waiter } from '@/lib/types';
+import type { Order, MenuItem, OrderStatus, Waiter, Bill, DecodedToken, Table } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ChefHat, Utensils, Package, Clock, ShieldAlert, XCircle } from 'lucide-react';
+import { CheckCircle, ChefHat, Utensils, Package, Clock, ShieldAlert, XCircle, FileText, Printer } from 'lucide-react';
 import OrderCard from './order-card';
 import MenuManagement from './menu-management';
 import { useMemo, useState } from 'react';
@@ -13,17 +13,23 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import CancelOrderForm from './cancel-order-form';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
-
+import BillingModal from './billing-modal';
+import { Separator } from './ui/separator';
 
 interface ManagerViewProps {
   orders: Order[];
+  bills: Bill[];
   menuItems: MenuItem[];
   waiters: Waiter[];
+  tables: Table[];
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
   onCancelOrder: (orderId: string, reason: string) => void;
   onAddMenuItem: (item: Omit<MenuItem, 'id'>) => void;
   onUpdateMenuItem: (item: MenuItem) => void;
   onDeleteMenuItem: (id: string) => void;
+  onCreateBill: (tableNumber: number, waiterId: string) => Promise<Bill | void>;
+  onPayBill: (billId: string) => void;
+  currentUser: DecodedToken;
 }
 
 const StatCard = ({ title, value, icon: Icon }: { title: string, value: number, icon: React.ElementType }) => (
@@ -40,21 +46,28 @@ const StatCard = ({ title, value, icon: Icon }: { title: string, value: number, 
 
 export default function ManagerView({
   orders,
+  bills,
   menuItems,
   waiters,
+  tables,
   onUpdateStatus,
   onCancelOrder,
   onAddMenuItem,
   onUpdateMenuItem,
   onDeleteMenuItem,
+  onCreateBill,
+  onPayBill,
+  currentUser
 }: ManagerViewProps) {
   
   const [confirmation, setConfirmation] = useState<{ orderId: string, status: OrderStatus, message: string } | null>(null);
   const [cancellingOrder, setCancellingOrder] = useState<Order | null>(null);
+  const [activeBill, setActiveBill] = useState<Bill | null>(null);
 
   const pendingOrders = useMemo(() => orders.filter(o => o.status === 'pending'), [orders]);
   const approvedOrders = useMemo(() => orders.filter(o => o.status === 'approved'), [orders]);
   const preparedOrders = useMemo(() => orders.filter(o => o.status === 'prepared'), [orders]);
+  const servedOrders = useMemo(() => orders.filter(o => o.status === 'served' || o.status === 'billed'), [orders]);
   const cancelledOrders = useMemo(() => orders.filter(o => o.status === 'cancelled'), [orders]);
 
   const getWaiterName = (waiterId: string) => waiters.find(w => w.id === waiterId)?.name || "Unknown";
@@ -77,6 +90,41 @@ export default function ManagerView({
 
     return { dailyItemsOrdered, dailyItemsServed };
   }, [orders]);
+  
+  const { tablesToBill, unpaidBills } = useMemo(() => {
+    const waiterUnpaidBills = bills.filter(b => b.status === 'unpaid');
+    
+    const tableNumbersWithServedOrders = new Set(
+        orders.filter(o => o.status === 'served').map(o => o.tableNumber)
+    );
+    
+    const tablesWithUnpaidBills = new Set(waiterUnpaidBills.map(b => b.tableNumber));
+    
+    const readyForBill = Array.from(tableNumbersWithServedOrders).filter(tn => !tablesWithUnpaidBills.has(tn));
+
+    return { tablesToBill: readyForBill, unpaidBills: waiterUnpaidBills };
+  }, [orders, bills]);
+
+
+  const handleGenerateBill = async (tableNumber: number) => {
+    // In manager view, we might not have a single waiter for a table if orders are from multiple waiters.
+    // Let's find the waiter from the most recent served order for that table.
+    const lastServedOrder = orders
+        .filter(o => o.tableNumber === tableNumber && o.status === 'served')
+        .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+    
+    if (lastServedOrder) {
+        const newBill = await onCreateBill(tableNumber, lastServedOrder.waiterId);
+        if(newBill) {
+            setActiveBill(newBill);
+        }
+    }
+  }
+
+  const handleViewBill = (bill: Bill) => {
+    setActiveBill(bill);
+  };
+
 
   const handleConfirm = () => {
     if (confirmation) {
@@ -93,6 +141,17 @@ export default function ManagerView({
   };
 
   const renderOrderActions = (order: Order) => {
+    if (order.status === 'billed') {
+        const relatedBill = bills.find(b => b.orderIds.includes(order.id));
+        if(relatedBill) {
+            return (
+                <Button variant="outline" className="w-full" onClick={() => handleViewBill(relatedBill)}>
+                    <Printer className="mr-2 h-4 w-4" /> Print Receipt
+                </Button>
+            )
+        }
+    }
+    
     switch (order.status) {
         case 'pending':
             return (
@@ -146,9 +205,11 @@ export default function ManagerView({
   return (
     <>
     <Tabs defaultValue="orders" className="w-full">
-      <TabsList className="grid w-full grid-cols-3 md:w-fit">
+      <TabsList className="grid w-full grid-cols-5 md:w-fit">
         <TabsTrigger value="orders">Manage Orders</TabsTrigger>
         <TabsTrigger value="menu">Manage Menu</TabsTrigger>
+        <TabsTrigger value="billing">Billing</TabsTrigger>
+        <TabsTrigger value="served">Served History</TabsTrigger>
         <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
       </TabsList>
 
@@ -244,6 +305,98 @@ export default function ManagerView({
           currentUserRole='manager'
         />
       </TabsContent>
+      <TabsContent value="billing" className="mt-4 space-y-8">
+            <div>
+              <h3 className="text-xl font-headline font-semibold mb-4">Unpaid Bills</h3>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {unpaidBills.length > 0 ? (
+                      unpaidBills.map(bill => (
+                          <Card key={bill.id} className="bg-amber-500/10 border-amber-500/20">
+                              <CardHeader>
+                                  <CardTitle>Table {bill.tableNumber}</CardTitle>
+                                  <CardDescription>Unpaid Bill Total: <span className="font-bold font-mono">₹{bill.total.toFixed(2)}</span></CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                  <Button className="w-full" variant="outline" onClick={() => handleViewBill(bill)}>
+                                      <FileText className="mr-2 h-4 w-4"/> View Bill
+                                  </Button>
+                              </CardContent>
+                          </Card>
+                      ))
+                  ) : (
+                        <div className="col-span-full text-center text-muted-foreground py-10">
+                          <Card className="border-dashed">
+                              <CardHeader>
+                                  <CardTitle>No Unpaid Bills</CardTitle>
+                                  <CardDescription>
+                                  All generated bills have been paid.
+                                  </CardDescription>
+                              </CardHeader>
+                          </Card>
+                      </div>
+                  )}
+              </div>
+          </div>
+
+          <Separator />
+          
+          <div>
+              <h3 className="text-xl font-headline font-semibold mb-4">Tables Ready to Bill</h3>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {tablesToBill.length > 0 ? (
+                      tablesToBill.map(tableNum => (
+                          <Card key={tableNum}>
+                              <CardHeader>
+                                  <CardTitle>Table {tableNum}</CardTitle>
+                                  <CardDescription>This table has served orders ready for billing.</CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                  <Button className="w-full" onClick={() => handleGenerateBill(tableNum)}>
+                                      <FileText className="mr-2 h-4 w-4"/> Generate Bill & QR Code
+                                  </Button>
+                              </CardContent>
+                          </Card>
+                      ))
+                  ) : (
+                      <div className="col-span-full text-center text-muted-foreground py-10">
+                          <Card className="border-dashed">
+                              <CardHeader>
+                                  <CardTitle>No Tables to Bill</CardTitle>
+                                  <CardDescription>
+                                  There are no tables with served orders waiting to be billed.
+                                  </CardDescription>
+                              </CardHeader>
+                          </Card>
+                      </div>
+                  )}
+              </div>
+          </div>
+      </TabsContent>
+      <TabsContent value="served" className="mt-6">
+        <div>
+          <h3 className="text-xl font-headline font-semibold mb-4">Served & Billed Orders</h3>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {servedOrders.length > 0 ? (
+              servedOrders.map(order => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  menuItems={menuItems}
+                  waiterName={getWaiterName(order.waiterId)}
+                  actions={renderOrderActions(order)}
+                />
+              ))
+            ) : (
+                <Card className="col-span-full border-dashed">
+                    <CardHeader className="text-center">
+                        <CardTitle>No Served Orders</CardTitle>
+                        <CardDescription>There are no completed orders to display.</CardDescription>
+                    </CardHeader>
+                </Card>
+            )}
+          </div>
+        </div>
+      </TabsContent>
        <TabsContent value="cancelled" className="mt-6">
         <div>
           <h3 className="text-xl font-headline font-semibold mb-4">Cancelled Orders</h3>
@@ -290,6 +443,18 @@ export default function ManagerView({
             isOpen={!!cancellingOrder}
             onClose={() => setCancellingOrder(null)}
             onConfirm={handleConfirmCancel}
+        />
+    )}
+
+    {activeBill && (
+        <BillingModal
+            isOpen={!!activeBill}
+            onClose={() => setActiveBill(null)}
+            bill={activeBill}
+            onPayBill={onPayBill}
+            orders={orders.filter(o => activeBill?.orderIds.includes(o.id))}
+            menuItems={menuItems}
+            currentUser={currentUser}
         />
     )}
     </>
