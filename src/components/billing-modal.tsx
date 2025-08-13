@@ -14,8 +14,9 @@ import QRCode from "react-qr-code";
 
 declare const Razorpay: any;
 
-// Fallback UPI ID if Razorpay is not configured.
-const FALLBACK_UPI_ID = "your-upi-id@okhdfcbank";
+// Fallback UPI ID if Razorpay is not configured. Loaded from environment variables.
+const FALLBACK_UPI_ID = process.env.NEXT_PUBLIC_FALLBACK_UPI_ID || "your-upi-id@example";
+
 
 interface BillingModalProps {
     isOpen: boolean;

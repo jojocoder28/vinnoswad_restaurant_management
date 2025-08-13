@@ -71,6 +71,9 @@ This application is built with Next.js, React, Tailwind CSS, and ShadCN UI compo
     # The KEY_ID is public and can be prefixed with NEXT_PUBLIC_
     NEXT_PUBLIC_RAZORPAY_KEY_ID="your_razorpay_key_id"
     RAZORPAY_KEY_SECRET="your_razorpay_key_secret"
+    
+    # Fallback UPI ID for QR code payments if Razorpay is not configured
+    NEXT_PUBLIC_FALLBACK_UPI_ID="dasjojo7-1@okicici"
     ```
 
 4.  **Run the development server:**
