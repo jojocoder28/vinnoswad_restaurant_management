@@ -80,14 +80,16 @@ export default function MenuManagement({ menuItems, onAddMenuItem, onUpdateMenuI
                 {items.map(item => (
                     <Card key={item.id} className="flex flex-col">
                         <CardHeader className="p-0 relative">
-                            <Image 
-                                src={item.imageUrl || 'https://placehold.co/400x300.png'} 
-                                alt={item.name} 
-                                width={400} 
-                                height={300} 
-                                className="rounded-t-lg object-cover aspect-[4/3]"
-                                data-ai-hint={`${item.category} ${item.name}`}
-                            />
+                             <div className="aspect-[4/3] overflow-hidden rounded-t-lg">
+                                <Image 
+                                    src={item.imageUrl || 'https://placehold.co/400x300.png'} 
+                                    alt={item.name} 
+                                    width={400} 
+                                    height={300} 
+                                    className="object-cover w-full h-full"
+                                    data-ai-hint={`${item.category} ${item.name}`}
+                                />
+                            </div>
                              {isAdmin && (
                                 <div className="absolute top-2 right-2">
                                      <DropdownMenu>

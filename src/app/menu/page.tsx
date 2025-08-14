@@ -1,7 +1,7 @@
 
 import { getMenuItems } from '../actions';
 import type { MenuItem } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Image from 'next/image';
 import Logo from '@/components/logo';
 import { Separator } from '@/components/ui/separator';
@@ -68,14 +68,16 @@ export default async function MenuPage() {
                                 {items.map(item => (
                                     <Card key={item.id} className="flex flex-col overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card/90 backdrop-blur-sm">
                                         <CardHeader className="p-0">
-                                            <Image 
-                                                src={item.imageUrl || 'https://placehold.co/400x300.png'} 
-                                                alt={item.name} 
-                                                width={400} 
-                                                height={300} 
-                                                className="object-cover aspect-[4/3]"
-                                                data-ai-hint={`${item.category} ${item.name}`}
-                                            />
+                                            <div className="aspect-[4/3] overflow-hidden">
+                                                <Image 
+                                                    src={item.imageUrl || 'https://placehold.co/400x300.png'} 
+                                                    alt={item.name} 
+                                                    width={400} 
+                                                    height={300} 
+                                                    className="object-cover w-full h-full"
+                                                    data-ai-hint={`${item.category} ${item.name}`}
+                                                />
+                                            </div>
                                         </CardHeader>
                                         <CardContent className="p-6 flex-grow flex flex-col">
                                              <CardTitle className="text-2xl font-headline text-primary">{item.name}</CardTitle>
