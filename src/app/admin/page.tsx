@@ -2,12 +2,13 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Order, MenuItem, Waiter, DecodedToken, User, UserStatus, UserRole, Table, Supplier, StockItem, PurchaseOrder } from '@/lib/types';
+import type { Order, MenuItem, Waiter, DecodedToken, User, UserStatus, UserRole, Table, Supplier, StockItem, PurchaseOrder, StockUsageLog } from '@/lib/types';
 import { 
     getOrders, getMenuItems, getWaiters, getUsers, updateUserStatus, deleteUser, registerUser, getTables, addMenuItem, updateMenuItem, deleteMenuItem,
     getSuppliers, addSupplier, updateSupplier, deleteSupplier,
     getStockItems, addStockItem, updateStockItem, deleteStockItem,
-    getPurchaseOrders, addPurchaseOrder, updatePurchaseOrderStatus
+    getPurchaseOrders, addPurchaseOrder, updatePurchaseOrderStatus,
+    getStockUsageLogs
 } from '../actions';
 import AdminView from '@/components/admin-view';
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +26,7 @@ export default function AdminPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [stockUsageLogs, setStockUsageLogs] = useState<StockUsageLog[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<DecodedToken | null>(null);
@@ -38,7 +40,7 @@ export default function AdminPage() {
         setLoading(true);
         const [
             ordersData, menuItemsData, waitersData, usersData, tablesData, 
-            suppliersData, stockItemsData, purchaseOrdersData, session
+            suppliersData, stockItemsData, purchaseOrdersData, stockLogsData, session
         ] = await Promise.all([
           getOrders(),
           getMenuItems(),
@@ -48,6 +50,7 @@ export default function AdminPage() {
           getSuppliers(),
           getStockItems(),
           getPurchaseOrders(),
+          getStockUsageLogs(),
           getSession()
         ]);
         
@@ -65,6 +68,7 @@ export default function AdminPage() {
         setSuppliers(suppliersData);
         setStockItems(stockItemsData);
         setPurchaseOrders(purchaseOrdersData);
+        setStockUsageLogs(stockLogsData);
 
       } catch (error) {
         console.error("Failed to fetch data:", error);
@@ -263,12 +267,13 @@ export default function AdminPage() {
             suppliers={suppliers}
             stockItems={stockItems}
             purchaseOrders={purchaseOrders}
+            stockUsageLogs={stockUsageLogs}
             onUpdateUserStatus={handleUpdateUserStatus}
             onDeleteUser={handleDeleteUser}
             onCreateUser={handleCreateUser}
             onAddMenuItem={handleAddMenuItem}
             onUpdateMenuItem={handleUpdateMenuItem}
-            onDeleteMenuItem={handleDeleteMenuItem}
+            onDeleteMenuItem={onDeleteMenuItem}
             onAddSupplier={handleAddSupplier}
             onUpdateSupplier={handleUpdateSupplier}
             onDeleteSupplier={handleDeleteSupplier}
@@ -276,7 +281,7 @@ export default function AdminPage() {
             onUpdateStockItem={handleUpdateStockItem}
             onDeleteStockItem={handleDeleteStockItem}
             onAddPurchaseOrder={handleAddPurchaseOrder}
-            onReceivePurchaseOrder={handleReceivePurchaseOrder}
+            onReceivePurchaseOrder={onReceivePurchaseOrder}
             currentUser={user}
         />
     </DashboardLayout>

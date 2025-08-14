@@ -1,9 +1,9 @@
 
 "use client";
 
-import type { Order, MenuItem, OrderStatus, Waiter, Bill, DecodedToken, Table, OrderItem } from '@/lib/types';
+import type { Order, MenuItem, OrderStatus, Waiter, Bill, DecodedToken, Table, OrderItem, StockItem, StockUsageLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ChefHat, Utensils, Package, Clock, ShieldAlert, XCircle, FileText, Printer } from 'lucide-react';
+import { CheckCircle, ChefHat, Utensils, Package, Clock, ShieldAlert, XCircle, FileText, Printer, BarChart, HardHat } from 'lucide-react';
 import OrderCard from './order-card';
 import MenuManagement from './menu-management';
 import { useMemo, useState } from 'react';
@@ -15,6 +15,11 @@ import { MoreHorizontal } from 'lucide-react';
 import BillingModal from './billing-modal';
 import { Separator } from './ui/separator';
 import DashboardNav from './dashboard-nav';
+import StockUsageForm from './stock-usage-form';
+import { Table as UiTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format, isToday } from 'date-fns';
+import { ScrollArea } from './ui/scroll-area';
+
 
 interface ManagerViewProps {
   orders: Order[];
@@ -22,6 +27,8 @@ interface ManagerViewProps {
   menuItems: MenuItem[];
   waiters: Waiter[];
   tables: Table[];
+  stockItems: StockItem[];
+  stockUsageLogs: StockUsageLog[];
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
   onCancelOrder: (orderId: string, reason: string) => void;
   onAddMenuItem: (item: Omit<MenuItem, 'id'>) => void;
@@ -29,6 +36,7 @@ interface ManagerViewProps {
   onDeleteMenuItem: (id: string) => void;
   onCreateBill: (tableNumber: number) => Promise<Bill | void>;
   onPayBill: (billId: string) => void;
+  onRecordStockUsage: (data: Omit<StockUsageLog, 'id' | 'timestamp'>) => void;
   currentUser: DecodedToken;
 }
 
@@ -50,6 +58,8 @@ export default function ManagerView({
   menuItems,
   waiters,
   tables,
+  stockItems,
+  stockUsageLogs,
   onUpdateStatus,
   onCancelOrder,
   onAddMenuItem,
@@ -57,12 +67,14 @@ export default function ManagerView({
   onDeleteMenuItem,
   onCreateBill,
   onPayBill,
+  onRecordStockUsage,
   currentUser
 }: ManagerViewProps) {
   
   const [confirmation, setConfirmation] = useState<{ orderId: string, status: OrderStatus, message: string } | null>(null);
   const [cancellingOrder, setCancellingOrder] = useState<Order | null>(null);
   const [activeBill, setActiveBill] = useState<Bill | null>(null);
+  const [isStockUsageFormOpen, setIsStockUsageFormOpen] = useState(false);
 
   const pendingOrders = useMemo(() => orders.filter(o => o.status === 'pending'), [orders]);
   const approvedOrders = useMemo(() => orders.filter(o => o.status === 'approved'), [orders]);
@@ -133,7 +145,8 @@ export default function ManagerView({
         };
     });
   }, [bills, orders]);
-
+  
+  const todaysStockLogs = useMemo(() => stockUsageLogs.filter(log => isToday(new Date(log.timestamp))), [stockUsageLogs]);
 
   const handleGenerateBill = async (tableNumber: number) => {
     const newBill = await onCreateBill(tableNumber);
@@ -160,6 +173,11 @@ export default function ManagerView({
         setCancellingOrder(null);
     }
   };
+  
+  const handleStockUsageSave = (data: Omit<StockUsageLog, 'id' | 'timestamp'>) => {
+    onRecordStockUsage(data);
+    setIsStockUsageFormOpen(false);
+  }
 
   const renderOrderActions = (order: Order) => {
     if (order.status === 'billed') {
@@ -226,6 +244,7 @@ export default function ManagerView({
     {
         value: "orders",
         label: "Manage Orders",
+        icon: Utensils,
         content: (
             <div className="space-y-8">
                 <div>
@@ -315,6 +334,7 @@ export default function ManagerView({
     {
         value: "menu",
         label: "Manage Menu",
+        icon: FileText,
         content: (
             <MenuManagement
                 menuItems={menuItems}
@@ -325,9 +345,72 @@ export default function ManagerView({
             />
         )
     },
+     {
+        value: "stock",
+        label: "Stock Usage",
+        icon: HardHat,
+        content: (
+            <div className="space-y-6">
+                <div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Log Stock Usage</CardTitle>
+                            <CardDescription>Record ingredients taken from storage for kitchen use, spillage, or other reasons.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <StockUsageForm 
+                                stockItems={stockItems}
+                                onSave={handleStockUsageSave}
+                                userId={currentUser.id}
+                             />
+                        </CardContent>
+                    </Card>
+                </div>
+                 <div>
+                    <h3 className="text-xl font-headline font-semibold mb-4">Today's Stock Usage Log</h3>
+                     <Card>
+                        <CardContent className="pt-6">
+                            <ScrollArea className="h-96">
+                                <UiTable>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Time</TableHead>
+                                            <TableHead>Item</TableHead>
+                                            <TableHead>Quantity Used</TableHead>
+                                            <TableHead>Category</TableHead>
+                                            <TableHead>Notes</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {todaysStockLogs.length > 0 ? todaysStockLogs.map(log => {
+                                            const stockItem = stockItems.find(si => si.id === log.stockItemId);
+                                            return (
+                                                <TableRow key={log.id}>
+                                                    <TableCell>{format(new Date(log.timestamp), 'p')}</TableCell>
+                                                    <TableCell>{stockItem?.name || 'Unknown'}</TableCell>
+                                                    <TableCell>{log.quantityUsed} {stockItem?.unit}</TableCell>
+                                                    <TableCell className="capitalize">{log.category.replace('_', ' ')}</TableCell>
+                                                    <TableCell>{log.notes || 'N/A'}</TableCell>
+                                                </TableRow>
+                                            )
+                                        }) : (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="text-center h-24">No stock usage has been logged today.</TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </UiTable>
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
+                 </div>
+            </div>
+        )
+    },
     {
         value: "billing",
         label: "Billing",
+        icon: Printer,
         content: (
             <div className="space-y-8">
                 <div>
@@ -401,6 +484,7 @@ export default function ManagerView({
     {
         value: "served",
         label: "Served History",
+        icon: BarChart,
         content: (
             <div>
                 <h3 className="text-xl font-headline font-semibold mb-4">Paid Bills History</h3>
@@ -439,34 +523,6 @@ export default function ManagerView({
             </div>
         )
     },
-    {
-        value: "cancelled",
-        label: "Cancelled",
-        content: (
-            <div>
-                <h3 className="text-xl font-headline font-semibold mb-4">Cancelled Orders</h3>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {cancelledOrders.length > 0 ? (
-                    cancelledOrders.map(order => (
-                        <OrderCard
-                        key={order.id}
-                        order={order}
-                        menuItems={menuItems}
-                        waiterName={getWaiterName(order.waiterId)}
-                        />
-                    ))
-                    ) : (
-                        <Card className="col-span-full border-dashed">
-                            <CardHeader className="text-center">
-                                <CardTitle>No Cancelled Orders</CardTitle>
-                                <CardDescription>There are no cancelled orders to display.</CardDescription>
-                            </CardHeader>
-                        </Card>
-                    )}
-                </div>
-            </div>
-        )
-    }
   ];
 
 

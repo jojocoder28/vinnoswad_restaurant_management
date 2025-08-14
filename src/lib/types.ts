@@ -5,6 +5,8 @@ export type UserRole = 'admin' | 'manager' | 'waiter' | 'kitchen';
 export type UserStatus = 'pending' | 'approved';
 export type BillStatus = 'unpaid' | 'paid';
 export type PurchaseStatus = 'ordered' | 'received' | 'cancelled';
+export type StockUsageCategory = 'kitchen_prep' | 'spillage' | 'staff_meal' | 'other';
+
 
 export interface MenuItemIngredient {
   stockItemId: string;
@@ -114,6 +116,16 @@ export interface PurchaseOrder {
   status: PurchaseStatus;
 }
 
+export interface StockUsageLog {
+    id: string;
+    stockItemId: string;
+    quantityUsed: number;
+    category: StockUsageCategory;
+    notes?: string;
+    recordedBy: string; // User ID of the manager
+    timestamp: string;
+}
+
 
 // Report-specific types
 export interface OrderReportItem extends OrderItem {
@@ -162,5 +174,3 @@ export interface RazorpayOrder {
     notes: any[];
     created_at: number;
 }
-
-    

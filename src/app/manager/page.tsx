@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import type { Order, MenuItem, DecodedToken, Waiter, Bill, Table, OrderItem } from '@/lib/types';
+import type { Order, MenuItem, DecodedToken, Waiter, Bill, Table, OrderItem, StockItem, StockUsageLog } from '@/lib/types';
 import {
   getOrders,
   updateOrderStatus,
@@ -15,7 +15,10 @@ import {
   getBills,
   createBillForTable,
   markBillAsPaid,
-  getTables
+  getTables,
+  getStockItems,
+  getStockUsageLogs,
+  recordStockUsage
 } from '../actions';
 
 import ManagerView from '@/components/manager-view';
@@ -31,6 +34,9 @@ export default function ManagerPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [waiters, setWaiters] = useState<Waiter[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
+  const [stockItems, setStockItems] = useState<StockItem[]>([]);
+  const [stockUsageLogs, setStockUsageLogs] = useState<StockUsageLog[]>([]);
+  
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<DecodedToken | null>(null);
   const { toast } = useToast();
@@ -40,12 +46,17 @@ export default function ManagerPage() {
     async function fetchData() {
       try {
         setLoading(true);
-        const [ordersData, menuItemsData, waitersData, billsData, tablesData, session] = await Promise.all([
+        const [
+            ordersData, menuItemsData, waitersData, billsData, tablesData, 
+            stockItemsData, stockLogsData, session
+        ] = await Promise.all([
           getOrders(),
           getMenuItems(),
           getWaiters(),
           getBills(),
           getTables(),
+          getStockItems(),
+          getStockUsageLogs(),
           getSession(),
         ]);
         
@@ -60,6 +71,8 @@ export default function ManagerPage() {
         setWaiters(waitersData);
         setBills(billsData);
         setTables(tablesData);
+        setStockItems(stockItemsData);
+        setStockUsageLogs(stockLogsData);
       } catch (error) {
         console.error("Failed to fetch data:", error);
         toast({
@@ -187,9 +200,10 @@ export default function ManagerPage() {
   const handlePayBill = async (billId: string) => {
     try {
         await markBillAsPaid(billId);
-        const [updatedBills, updatedTables] = await Promise.all([getBills(), getTables()]);
+        const [updatedBills, updatedTables, updatedStock] = await Promise.all([getBills(), getTables(), getStockItems()]);
         setBills(updatedBills);
         setTables(updatedTables);
+        setStockItems(updatedStock);
         toast({
             title: "Payment Recorded",
             description: "Bill has been marked as paid and table is now available.",
@@ -202,6 +216,29 @@ export default function ManagerPage() {
         });
     }
   }
+  
+  const handleRecordStockUsage = async (data: Omit<StockUsageLog, 'id' | 'timestamp'>) => {
+    try {
+      await recordStockUsage(data);
+      const [updatedStockItems, updatedLogs] = await Promise.all([
+        getStockItems(),
+        getStockUsageLogs()
+      ]);
+      setStockItems(updatedStockItems);
+      setStockUsageLogs(updatedLogs);
+      toast({
+        title: "Stock Usage Recorded",
+        description: "The stock levels have been updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not record stock usage.",
+        variant: "destructive",
+      });
+    }
+  };
+
 
   if (loading || !user) {
     return (
@@ -222,6 +259,8 @@ export default function ManagerPage() {
             menuItems={menuItems}
             waiters={waiters}
             tables={tables}
+            stockItems={stockItems}
+            stockUsageLogs={stockUsageLogs}
             onUpdateStatus={handleUpdateOrderStatus}
             onCancelOrder={handleCancelOrder}
             onAddMenuItem={handleAddMenuItem}
@@ -229,10 +268,9 @@ export default function ManagerPage() {
             onDeleteMenuItem={handleDeleteMenuItem}
             onCreateBill={handleCreateBill}
             onPayBill={handlePayBill}
+            onRecordStockUsage={handleRecordStockUsage}
             currentUser={user}
           />
     </DashboardLayout>
   );
 }
-
-    

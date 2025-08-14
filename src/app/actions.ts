@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/mongodb';
-import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus, OrderItem, Bill, BillStatus, ReportData, OrderReport, Supplier, StockItem, PurchaseOrder, PurchaseStatus, RazorpayOrder } from '@/lib/types';
+import type { MenuItem, Order, OrderStatus, Waiter, Table, User, UserStatus, OrderItem, Bill, BillStatus, ReportData, OrderReport, Supplier, StockItem, PurchaseOrder, PurchaseStatus, RazorpayOrder, StockUsageLog } from '@/lib/types';
 import { Collection, ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
@@ -411,6 +411,9 @@ export async function createBillForTable(tableNumber: number): Promise<Bill> {
 export async function markBillAsPaid(billId: string): Promise<void> {
     const billsCollection = await getCollection<Bill>('bills');
     const tablesCollection = await getCollection<Table>('tables');
+    const ordersCollection = await getCollection<Order>('orders');
+    const stockCollection = await getCollection<StockItem>('stock');
+    const menuCollection = await getCollection<MenuItem>('menu');
 
     await billsCollection.updateOne(
         { _id: new ObjectId(billId) },
@@ -423,6 +426,22 @@ export async function markBillAsPaid(billId: string): Promise<void> {
             { tableNumber: bill.tableNumber },
             { $set: { status: 'available', waiterId: null } }
         );
+        
+        // Auto-deplete stock based on sold items
+        const billedOrders = await ordersCollection.find({ _id: { $in: bill.orderIds.map(id => new ObjectId(id)) }}).toArray();
+        for (const order of billedOrders) {
+            for (const item of order.items) {
+                const menuItem = await menuCollection.findOne({ _id: new ObjectId(item.menuItemId) });
+                if (menuItem && menuItem.ingredients) {
+                    for (const ingredient of menuItem.ingredients) {
+                        await stockCollection.updateOne(
+                            { _id: new ObjectId(ingredient.stockItemId) },
+                            { $inc: { quantityInStock: - (ingredient.quantity * item.quantity) } }
+                        );
+                    }
+                }
+            }
+        }
     }
     
     revalidatePath('/waiter');
@@ -559,6 +578,37 @@ export async function deleteStockItem(id: string): Promise<void> {
     await collection.deleteOne({ _id: new ObjectId(id) });
     revalidatePath('/admin');
 }
+
+// Stock Usage Logs
+export async function getStockUsageLogs(): Promise<StockUsageLog[]> {
+    const collection = await getCollection<StockUsageLog>('stock_usage_logs');
+    const logs = await collection.find().sort({ timestamp: -1 }).toArray();
+    return logs.map(mapId);
+}
+
+export async function recordStockUsage(data: Omit<StockUsageLog, 'id' | 'timestamp'>): Promise<StockUsageLog> {
+    const usageCollection = await getCollection<StockUsageLog>('stock_usage_logs');
+    const stockCollection = await getCollection<StockItem>('stock');
+
+    const logEntry = {
+        ...data,
+        timestamp: new Date().toISOString()
+    };
+
+    // 1. Record the usage event
+    const result = await usageCollection.insertOne(logEntry as Omit<StockUsageLog, 'id'>);
+
+    // 2. Decrement the stock quantity
+    await stockCollection.updateOne(
+        { _id: new ObjectId(data.stockItemId) },
+        { $inc: { quantityInStock: -data.quantityUsed } }
+    );
+    
+    revalidatePath('/manager');
+    revalidatePath('/admin');
+    return mapId({ ...logEntry, _id: result.insertedId });
+}
+
 
 // Purchase Orders
 export async function getPurchaseOrders(): Promise<PurchaseOrder[]> {
