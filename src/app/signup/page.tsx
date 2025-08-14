@@ -89,9 +89,10 @@ export default function SignupPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="font-headline text-2xl">Create an Account</CardTitle>
-          <CardDescription>Join Vinnoswad to manage your restaurant. New accounts require admin approval.</CardDescription>
+          <CardDescription>Public registration is disabled. Only an administrator can create new accounts.</CardDescription>
         </CardHeader>
         <CardContent>
+          {/*
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSignup)} className="space-y-4">
               <FormField
@@ -160,6 +161,7 @@ export default function SignupPage() {
               </Button>
             </form>
           </Form>
+          */}
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
             <Link href="/login" className="underline hover:text-primary">

@@ -15,6 +15,11 @@ export async function middleware(request: NextRequest) {
   const publicRoutes = ['/login', '/signup', '/unauthorized'];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
+  // Redirect any requests to /signup to the login page
+  if (pathname === '/signup') {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
   // If there is no session and the user is trying to access a protected route,
   // redirect them to the login page.
   if (!session && isProtectedRoute) {
