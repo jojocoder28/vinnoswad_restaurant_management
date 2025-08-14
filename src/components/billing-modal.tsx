@@ -166,6 +166,8 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                 newWindow.document.write('<html><head><title>Print Bill</title>');
                 const styles = `<style>
                     body { font-family: sans-serif; margin: 20px; color: #333; }
+                    .logo-container { text-align: center; margin-bottom: 0.5rem; }
+                    .logo-container img { width: 112px; height: auto; }
                     table { width: 100%; border-collapse: collapse; }
                     th, td { padding: 4px; text-align: left; vertical-align: top; }
                     .text-center { text-align: center; }
@@ -219,7 +221,10 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                             </div>
                         )}
                         <div className="flex flex-col items-center text-center">
-                            <h2 style={{fontWeight: 'bold', fontSize: '1.25rem', marginTop: '0.5rem' }}>Vinnoswad Restaurant</h2>
+                            <div className="logo-container">
+                                <img src="/logo_vinnoswad.png" alt="Vinnoswad Logo" />
+                            </div>
+                            <h2 style={{fontWeight: 'bold', fontSize: '1.25rem' }}>Vinnoswad Restaurant</h2>
                             <p className="text-sm">117-NH, Sarisha Ashram More, Diamond Harbour</p>
                             <p className="text-sm">South 24 Parganas, PIN - 743368, WB, INDIA</p>
                             <p className="text-sm">GSTIN: 29GGGGG1314G1Z4</p>
