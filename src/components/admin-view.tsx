@@ -18,6 +18,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './ui/
 import { ScrollArea } from './ui/scroll-area';
 import { Table as UiTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { format } from 'date-fns';
+import { Button } from './ui/button';
 
 interface AdminViewProps {
   orders: Order[];
