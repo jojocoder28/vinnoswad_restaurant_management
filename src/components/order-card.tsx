@@ -1,5 +1,7 @@
 
-import type { ReactNode } from 'react';
+"use client";
+
+import { useMemo, type ReactNode } from 'react';
 import type { Order, MenuItem, OrderStatus } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +22,7 @@ const statusStyles: Record<OrderStatus, string> = {
   approved: 'bg-blue-500/20 text-blue-700 border-blue-500/30 hover:bg-blue-500/30',
   prepared: 'bg-purple-500/20 text-purple-700 border-purple-500/30 hover:bg-purple-500/30',
   served: 'bg-gray-500/20 text-gray-700 border-gray-500/30 hover:bg-gray-500/30',
-  billed: 'bg-green-500/20 text-green-700 border-green-500/30 hover:bg-green-500/30',
+  billed: 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20',
   cancelled: 'bg-red-500/20 text-red-700 border-red-500/30 hover:bg-red-500/30',
 };
 
