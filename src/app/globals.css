@@ -76,7 +76,7 @@ body {
 /* Delicious Background Animation */
 .area {
     background: hsl(var(--background));
-    background: -webkit-linear-gradient(to left, hsl(var(--secondary)), hsl(var(--background)));
+    background: linear-gradient(to left, hsl(var(--secondary)), hsl(var(--background)));
     width: 100%;
     height: 100%;
     position: absolute;
