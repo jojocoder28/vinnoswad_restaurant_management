@@ -227,7 +227,6 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                             <h2 style={{fontWeight: 'bold', fontSize: '1.25rem' }}>Vinnoswad Restaurant</h2>
                             <p className="text-sm">117-NH, Sarisha Ashram More, Diamond Harbour</p>
                             <p className="text-sm">South 24 Parganas, PIN - 743368, WB, INDIA</p>
-                            <p className="text-sm">GSTIN: 29GGGGG1314G1Z4</p>
                         </div>
                         <div style={{borderBottom: '1px dashed black', margin: '1rem 0'}} />
                         <div className="text-xs">
