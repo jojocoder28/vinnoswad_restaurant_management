@@ -7,6 +7,24 @@ import Logo from '@/components/logo';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Utensils, Soup, Fish, Beef, Vegan, Cookie } from 'lucide-react';
+
+const AnimatedBackground = () => (
+    <div className="area">
+        <ul className="circles">
+            <li><Utensils/></li>
+            <li><Soup/></li>
+            <li><Fish/></li>
+            <li><Beef/></li>
+            <li><Vegan/></li>
+            <li><Cookie/></li>
+            <li><Fish/></li>
+            <li><Utensils/></li>
+            <li><Soup/></li>
+            <li><Cookie/></li>
+        </ul>
+    </div >
+)
 
 export default async function MenuPage() {
     const allMenuItems = await getMenuItems();
@@ -22,8 +40,9 @@ export default async function MenuPage() {
     }, {} as Record<string, MenuItem[]>);
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
-             <header className="py-6 px-4 md:px-8 bg-card border-b">
+        <div className="min-h-screen bg-background text-foreground relative overflow-x-hidden">
+            <AnimatedBackground />
+             <header className="py-6 px-4 md:px-8 bg-card/80 backdrop-blur-sm border-b sticky top-0 z-20">
                 <div className="container mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Logo />
@@ -34,7 +53,7 @@ export default async function MenuPage() {
                     </Button>
                 </div>
             </header>
-            <main className="container mx-auto p-4 md:p-8">
+            <main className="container mx-auto p-4 md:p-8 relative z-10">
                 <div className="text-center mb-12">
                     <h2 className="font-headline text-4xl md:text-5xl font-bold text-primary tracking-tight">Our Menu</h2>
                     <p className="text-muted-foreground mt-2 text-lg">A taste of tradition, crafted with passion.</p>
@@ -47,7 +66,7 @@ export default async function MenuPage() {
                             <Separator className="mb-8"/>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {items.map(item => (
-                                    <Card key={item.id} className="flex flex-col overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+                                    <Card key={item.id} className="flex flex-col overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card/90 backdrop-blur-sm">
                                         <CardHeader className="p-0">
                                             <Image 
                                                 src={item.imageUrl || 'https://placehold.co/400x300.png'} 
@@ -69,7 +88,7 @@ export default async function MenuPage() {
                         </div>
                     ))}
                      {availableMenuItems.length === 0 && (
-                        <Card className="col-span-full border-dashed py-20">
+                        <Card className="col-span-full border-dashed py-20 bg-card/90 backdrop-blur-sm">
                             <CardHeader className="text-center">
                                 <CardTitle>Menu Not Available</CardTitle>
                                 <CardDescription>Please check back later or contact the restaurant for today's offerings.</CardDescription>
@@ -78,7 +97,7 @@ export default async function MenuPage() {
                      )}
                 </div>
             </main>
-             <footer className="mt-16 py-8 bg-card border-t">
+             <footer className="mt-16 py-8 bg-card/80 backdrop-blur-sm border-t relative z-10">
                 <div className="container mx-auto text-center text-muted-foreground">
                     <p>&copy; {new Date().getFullYear()} Vinnoswad Restaurant. All Rights Reserved.</p>
                 </div>
