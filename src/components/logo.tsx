@@ -1,4 +1,5 @@
-import { UtensilsCrossed } from 'lucide-react';
+
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 type LogoProps = {
@@ -7,13 +8,14 @@ type LogoProps = {
 
 export default function Logo({ className }: LogoProps) {
   return (
-    <div
-      className={cn(
-        'flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground',
-        className
-      )}
-    >
-      <UtensilsCrossed className="h-6 w-6" />
+    <div className={cn('relative h-16 w-28', className)}>
+      <Image
+        src="/logo_vinnoswad.png"
+        alt="Vinnoswad Logo"
+        fill
+        className="object-contain"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+      />
     </div>
   );
 }

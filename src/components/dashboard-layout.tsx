@@ -25,7 +25,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto p-4 md:p-8">
         <header className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <Logo />
             <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Vinnoswad</h1>
           </div>
