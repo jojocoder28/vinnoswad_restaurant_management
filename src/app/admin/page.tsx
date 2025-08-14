@@ -273,7 +273,7 @@ export default function AdminPage() {
             onCreateUser={handleCreateUser}
             onAddMenuItem={handleAddMenuItem}
             onUpdateMenuItem={handleUpdateMenuItem}
-            onDeleteMenuItem={onDeleteMenuItem}
+            onDeleteMenuItem={handleDeleteMenuItem}
             onAddSupplier={handleAddSupplier}
             onUpdateSupplier={handleUpdateSupplier}
             onDeleteSupplier={handleDeleteSupplier}
@@ -281,7 +281,7 @@ export default function AdminPage() {
             onUpdateStockItem={handleUpdateStockItem}
             onDeleteStockItem={handleDeleteStockItem}
             onAddPurchaseOrder={handleAddPurchaseOrder}
-            onReceivePurchaseOrder={onReceivePurchaseOrder}
+            onReceivePurchaseOrder={handleReceivePurchaseOrder}
             currentUser={user}
         />
     </DashboardLayout>
