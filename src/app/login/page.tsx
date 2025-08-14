@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -76,7 +77,7 @@ export default function LoginPage() {
       
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="font-headline text-2xl">Login</CardTitle>
+          <CardTitle className="font-headline text-2xl">Staff Login</CardTitle>
           <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -113,8 +114,12 @@ export default function LoginPage() {
                     </Button>
                 </form>
             </Form>
-            <p className="mt-4 text-center text-sm text-muted-foreground">
-                Don't have an account? An admin must create one for you.
+             <Separator className="my-6" />
+            <p className="text-center text-sm text-muted-foreground">
+                Viewing as a customer?{' '}
+                <Link href="/menu" className="underline hover:text-primary font-semibold">
+                    View Our Menu
+                </Link>
             </p>
         </CardContent>
       </Card>

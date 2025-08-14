@@ -12,7 +12,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const protectedRoutes = ['/admin', '/manager', '/waiter', '/kitchen'];
-  const publicRoutes = ['/login', '/signup', '/unauthorized'];
+  const publicRoutes = ['/login', '/signup', '/unauthorized', '/menu'];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
   // Redirect any requests to /signup to the login page
@@ -28,9 +28,9 @@ export async function middleware(request: NextRequest) {
 
   // If there is a session, handle role-based access and redirects
   if (session) {
-    // If the user is logged in and tries to access a public route like /login or /signup,
+    // If the user is logged in and tries to access a public route like /login,
     // redirect them to their dashboard.
-    if (publicRoutes.includes(pathname)) {
+    if (pathname === '/login' || pathname === '/signup') {
       return NextResponse.redirect(new URL(`/${session.role}`, request.url));
     }
     
