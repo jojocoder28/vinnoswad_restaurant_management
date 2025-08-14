@@ -99,6 +99,7 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
   }
   
   const isEditing = !!editingOrder;
+  const waiterTables = tables.filter(t => t.status === 'available' || t.waiterId === waiterId);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -122,9 +123,9 @@ export default function OrderForm({ isOpen, onClose, menuItems, waiterId, onCrea
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {tables.map(table => (
-                        <SelectItem key={table.id} value={table.id} disabled={!isEditing && table.status !== 'available'}>
-                          Table {table.tableNumber} {table.status !== 'available' && !isEditing ? '(Occupied)' : ''}
+                      {waiterTables.map(table => (
+                        <SelectItem key={table.id} value={table.id} disabled={!isEditing && table.status === 'occupied' && table.waiterId !== waiterId}>
+                          Table {table.tableNumber} {table.status === 'occupied' && table.waiterId !== waiterId ? '(Occupied by another waiter)' : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -258,7 +258,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus): P
     );
     
     const order = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
-    if (order && status === 'served') {
+    if (order && (status === 'served' || status === 'cancelled')) {
        await freeUpTableIfNeeded(order.tableNumber);
     }
 
@@ -681,5 +681,3 @@ export async function verifyRazorpayPayment(data: {
     // Mark the bill as paid in the database
     await markBillAsPaid(billId);
 }
-
-    

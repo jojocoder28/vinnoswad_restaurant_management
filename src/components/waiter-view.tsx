@@ -57,16 +57,10 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
     };
   }, [orders, selectedWaiter]);
   
-  const availableTablesForNewOrder = useMemo(() => {
+  const tablesForWaiter = useMemo(() => {
     if (!selectedWaiter) return [];
-    // For new orders, only completely available tables
-    return tables.filter(table => table.status === 'available');
-  }, [tables, selectedWaiter]);
-  
-  const tablesForEditing = useMemo(() => {
-     if (!selectedWaiter) return [];
-     // For editing, waiter can see their own tables + available ones
-     return tables.filter(table => table.status === 'available' || table.waiterId === selectedWaiter.id);
+    // Waiter can see their own occupied tables + all available tables.
+    return tables.filter(table => table.status === 'available' || table.waiterId === selectedWaiter.id);
   }, [tables, selectedWaiter]);
 
   const handleViewBill = (bill: Bill) => {
@@ -227,7 +221,7 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <p>You are logged in as <span className="font-semibold">{selectedWaiter.name}</span>.</p>
-        <Button className="w-full sm:w-auto" onClick={handleCreateNewOrder} disabled={!selectedWaiter.id || availableTablesForNewOrder.length === 0}>
+        <Button className="w-full sm:w-auto" onClick={handleCreateNewOrder} disabled={!selectedWaiter.id}>
           <PlusCircle className="mr-2 h-4 w-4" /> New Order
         </Button>
       </div>
@@ -240,7 +234,7 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
         waiterId={selectedWaiter.id}
         onCreateOrder={onCreateOrder}
         onUpdateOrder={onUpdateOrder}
-        tables={editingOrder ? tablesForEditing : availableTablesForNewOrder}
+        tables={tablesForWaiter}
         editingOrder={editingOrder}
       />
     </div>
@@ -274,5 +268,3 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
     </>
   );
 }
-
-    
