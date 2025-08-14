@@ -64,7 +64,7 @@ export default async function MenuPage() {
                         <div key={category}>
                             <h3 className="text-3xl font-headline font-semibold mb-2">{category}</h3>
                             <Separator className="mb-8"/>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
                                 {items.map(item => (
                                     <Card key={item.id} className="flex flex-col overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card/90 backdrop-blur-sm">
                                         <CardHeader className="p-0">
@@ -79,10 +79,10 @@ export default async function MenuPage() {
                                                 />
                                             </div>
                                         </CardHeader>
-                                        <CardContent className="p-6 flex-grow flex flex-col">
-                                             <CardTitle className="text-2xl font-headline text-primary">{item.name}</CardTitle>
+                                        <CardContent className="p-3 md:p-6 flex-grow flex flex-col">
+                                             <CardTitle className="text-base md:text-2xl font-headline text-primary">{item.name}</CardTitle>
                                              <div className="flex-grow" />
-                                             <p className="font-mono text-primary font-bold text-xl mt-4">₹{item.price.toFixed(2)}</p>
+                                             <p className="font-mono text-primary font-bold text-sm md:text-xl mt-2 md:mt-4">₹{item.price.toFixed(2)}</p>
                                         </CardContent>
                                     </Card>
                                 ))}
