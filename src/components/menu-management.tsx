@@ -120,7 +120,7 @@ export default function MenuManagement({ menuItems, onAddMenuItem, onUpdateMenuI
                                     onCheckedChange={(checked) => handleAvailabilityChange(item, checked)}
                                     disabled={!isAdmin && currentUserRole !== 'manager'}
                                 />
-                                <Label htmlFor={`availability-${item.id}`} className={item.isAvailable ? 'text-green-700' : 'text-destructive'}>
+                                <Label htmlFor={`availability-${item.id}`} className={item.isAvailable ? 'text-primary' : 'text-destructive'}>
                                     {item.isAvailable ? 'Available Today' : 'Not Available'}
                                 </Label>
                             </div>

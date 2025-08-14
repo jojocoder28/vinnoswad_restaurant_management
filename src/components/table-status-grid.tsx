@@ -24,7 +24,7 @@ export default function TableStatusGrid({ tables, waiters }: TableStatusGridProp
                     key={table.id}
                     className={cn(
                         "transition-all",
-                        table.status === 'occupied' ? 'bg-destructive/10 border-destructive/20' : 'bg-green-500/10 border-green-500/20'
+                        table.status === 'occupied' ? 'bg-destructive/10 border-destructive/20' : 'bg-primary/5 border-primary/20'
                     )}
                 >
                     <CardHeader className="p-4 pb-0">
@@ -36,7 +36,7 @@ export default function TableStatusGrid({ tables, waiters }: TableStatusGridProp
                     <CardContent className="p-4 pt-2 text-sm">
                         <p className={cn(
                             "font-semibold capitalize",
-                             table.status === 'occupied' ? 'text-destructive' : 'text-green-700'
+                             table.status === 'occupied' ? 'text-destructive' : 'text-primary'
                         )}>
                             {table.status}
                         </p>

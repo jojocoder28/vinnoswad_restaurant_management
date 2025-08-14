@@ -140,13 +140,13 @@ export default function ProfitLossAnalysis({ menuItems, orders }: ProfitLossAnal
                                     <TableCell className="font-medium">{item.name}</TableCell>
                                     <TableCell className="text-right font-mono">₹{item.price.toFixed(2)}</TableCell>
                                     <TableCell className="text-right font-mono text-amber-600">₹{(item.costOfGoods || 0).toFixed(2)}</TableCell>
-                                    <TableCell className={`text-right font-mono font-semibold ${item.profitPerUnit >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+                                    <TableCell className={`text-right font-mono font-semibold ${item.profitPerUnit >= 0 ? 'text-primary' : 'text-destructive'}`}>
                                         ₹{item.profitPerUnit.toFixed(2)}
                                     </TableCell>
                                     <TableCell className="text-right">{item.unitsSold}</TableCell>
                                     <TableCell className="text-right font-mono">₹{item.totalRevenue.toFixed(2)}</TableCell>
                                     <TableCell className="text-right font-mono text-amber-600">₹{item.totalCost.toFixed(2)}</TableCell>
-                                    <TableCell className={`text-right font-mono font-bold ${item.totalProfit >= 0 ? 'text-green-700' : 'text-destructive'}`}>
+                                    <TableCell className={`text-right font-mono font-bold ${item.totalProfit >= 0 ? 'text-primary' : 'text-destructive'}`}>
                                        ₹{item.totalProfit.toFixed(2)}
                                     </TableCell>
                                 </TableRow>

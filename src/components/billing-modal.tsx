@@ -126,7 +126,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                     tableNumber: bill.tableNumber,
                 },
                 theme: {
-                    color: "#008080", // Matches the app's primary color
+                    color: "#59331d", // Matches the app's primary color (dark brown)
                 },
             };
 
@@ -165,7 +165,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
             if (newWindow) {
                 newWindow.document.write('<html><head><title>Print Bill</title>');
                 const styles = `<style>
-                    body { font-family: sans-serif; margin: 20px; }
+                    body { font-family: sans-serif; margin: 20px; color: #333; }
                     table { width: 100%; border-collapse: collapse; }
                     th, td { padding: 4px; text-align: left; vertical-align: top; }
                     .text-center { text-align: center; }
@@ -212,8 +212,8 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                 <div id="printable-bill" className="hidden">
                     <div className="relative">
                         {isPaid && (
-                           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-12deg)', zIndex: 10, opacity: 0.15 }}>
-                                <span style={{ fontSize: '6rem', fontWeight: 'bold', color: 'rgba(34, 197, 94, 1)', border: '8px solid rgba(34, 197, 94, 1)', borderRadius: '0.5rem', padding: '1rem 2rem' }}>
+                           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-12deg)', zIndex: 10, opacity: 0.1 }}>
+                                <span style={{ fontSize: '6rem', fontWeight: 'bold', color: 'hsl(var(--primary))', border: '8px solid hsl(var(--primary))', borderRadius: '0.5rem', padding: '1rem 2rem' }}>
                                     PAID
                                 </span>
                             </div>
@@ -288,7 +288,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                     <div className="relative">
                         {isPaid && (
                              <div className="absolute inset-0 flex items-center justify-center z-10">
-                                <span className="text-5xl sm:text-8xl font-bold text-green-500/20 border-4 border-green-500/20 rounded-lg p-4 sm:p-8 transform -rotate-12">
+                                <span className="text-5xl sm:text-8xl font-bold text-primary/10 border-4 border-primary/20 rounded-lg p-4 sm:p-8 transform -rotate-12">
                                     PAID
                                 </span>
                             </div>

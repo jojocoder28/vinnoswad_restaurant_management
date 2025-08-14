@@ -26,7 +26,7 @@ interface UserManagementProps {
 
 const statusStyles = {
     pending: "bg-yellow-500/20 text-yellow-700 border-yellow-500/30",
-    approved: "bg-green-500/20 text-green-700 border-green-500/30",
+    approved: "bg-primary/10 text-primary border-primary/20",
 }
 
 export default function UserManagement({ users, orders, menuItems, waiters, onUpdateUserStatus, onDeleteUser, onCreateUser, currentUser }: UserManagementProps) {
