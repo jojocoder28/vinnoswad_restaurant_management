@@ -8,14 +8,12 @@ type LogoProps = {
 
 export default function Logo({ className }: LogoProps) {
   return (
-    <div className={cn('relative h-16 w-28', className)}>
-      <Image
-        src="/logo_vinnoswad.png"
-        alt="Vinnoswad Logo"
-        fill
-        className="object-contain"
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-      />
-    </div>
+    <Image
+      src="/logo_vinnoswad.png"
+      alt="Vinnoswad Logo"
+      width={112} // 28 * 4
+      height={64} // 16 * 4
+      className={cn("object-contain", className)}
+    />
   );
 }

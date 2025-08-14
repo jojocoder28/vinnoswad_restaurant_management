@@ -14,6 +14,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import Logo from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -66,12 +68,12 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-      <header className="mb-4 flex flex-col items-center text-center gap-2">
+      <header className="mb-4 flex flex-col items-center text-center gap-4">
         <Logo />
         <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Vinnoswad</h1>
         <p className="text-muted-foreground">Streamlined order management for restaurants.</p>
       </header>
-
+      
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="font-headline text-2xl">Login</CardTitle>
@@ -111,12 +113,9 @@ export default function LoginPage() {
                     </Button>
                 </form>
             </Form>
-            {/* <p className="mt-4 text-center text-sm text-muted-foreground">
-                Don't have an account?{' '}
-                <Link href="/signup" className="underline hover:text-primary">
-                    Sign up
-                </Link>
-            </p> */}
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+                Don't have an account? An admin must create one for you.
+            </p>
         </CardContent>
       </Card>
     </div>

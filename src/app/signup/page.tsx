@@ -82,7 +82,7 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-       <header className="mb-4 flex flex-col items-center text-center gap-2">
+       <header className="mb-4 flex flex-col items-center text-center gap-4">
         <Logo />
         <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Vinnoswad</h1>
       </header>
