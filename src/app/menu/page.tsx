@@ -48,7 +48,7 @@ export default async function MenuPage() {
                         <Logo />
                          <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Vinnoswad</h1>
                     </div>
-                     <Button asChild variant="outline">
+                     <Button asChild variant="outline" className="hidden md:inline-flex">
                         <Link href="/login">Staff Login</Link>
                     </Button>
                 </div>
@@ -102,6 +102,9 @@ export default async function MenuPage() {
              <footer className="mt-16 py-8 bg-card/80 backdrop-blur-sm border-t relative z-10">
                 <div className="container mx-auto text-center text-muted-foreground">
                     <p>&copy; {new Date().getFullYear()} Vinnoswad Restaurant. All Rights Reserved.</p>
+                     <p className="text-xs mt-2 md:hidden">
+                        <Link href="/login" className="hover:text-primary underline">Staff Login</Link>
+                    </p>
                 </div>
             </footer>
         </div>
