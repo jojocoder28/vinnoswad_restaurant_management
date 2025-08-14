@@ -14,6 +14,7 @@ import QRCode from "react-qr-code";
 import Logo from './logo';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 declare const Razorpay: any;
 
@@ -35,6 +36,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
     const [loading, setLoading] = useState(false);
     const [isPaid, setIsPaid] = useState(false);
     const { toast } = useToast();
+    const isMobile = useIsMobile();
     
     // Check if Razorpay is configured
     const isRazorpayConfigured = !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
@@ -286,7 +288,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                     <div className="relative">
                         {isPaid && (
                              <div className="absolute inset-0 flex items-center justify-center z-10">
-                                <span className="text-8xl font-bold text-green-500/20 border-4 border-green-500/20 rounded-lg p-8 transform -rotate-12">
+                                <span className="text-5xl sm:text-8xl font-bold text-green-500/20 border-4 border-green-500/20 rounded-lg p-4 sm:p-8 transform -rotate-12">
                                     PAID
                                 </span>
                             </div>
@@ -334,8 +336,8 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                                             Scan the QR code with your phone to pay the bill amount.
                                         </AlertDescription>
                                     </Alert>
-                                    <div className="bg-white p-4 rounded-md">
-                                        <QRCode value={upiUri} size={200} />
+                                    <div className="bg-white p-2 sm:p-4 rounded-md">
+                                        <QRCode value={upiUri} size={isMobile ? 150 : 200} />
                                     </div>
                                 </div>
                             )}

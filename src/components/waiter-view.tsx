@@ -197,7 +197,7 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
         value: "active",
         label: "Active Orders",
         content: (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {activeOrders.length > 0 ? (
                 activeOrders.map(order => (
                     <OrderCard
@@ -230,7 +230,7 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
             <div className="space-y-8">
                  <div>
                     <h3 className="text-xl font-headline font-semibold mb-4">Unpaid Bills</h3>
-                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {unpaidBills.length > 0 ? (
                             unpaidBills.map(bill => (
                                 <Card key={bill.id} className="bg-amber-500/10 border-amber-500/20">
@@ -264,7 +264,7 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
                 
                 <div>
                     <h3 className="text-xl font-headline font-semibold mb-4">Tables Ready to Bill</h3>
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {tablesToBill.length > 0 ? (
                             tablesToBill.map(tableNum => (
                                 <Card key={tableNum}>
@@ -300,7 +300,7 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
         value: "history",
         label: "Order History",
         content: (
-             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {orderHistory.length > 0 ? (
                 orderHistory.map(order => (
                     <OrderCard
@@ -333,7 +333,7 @@ export default function WaiterView({ orders, bills, menuItems, waiters, tables, 
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <p>You are logged in as <span className="font-semibold">{selectedWaiter.name}</span>.</p>
-        <Button onClick={handleCreateNewOrder} disabled={!selectedWaiter.id || availableTablesForNewOrder.length === 0}>
+        <Button className="w-full sm:w-auto" onClick={handleCreateNewOrder} disabled={!selectedWaiter.id || availableTablesForNewOrder.length === 0}>
           <PlusCircle className="mr-2 h-4 w-4" /> New Order
         </Button>
       </div>
