@@ -27,7 +27,7 @@ interface ManagerViewProps {
   onAddMenuItem: (item: Omit<MenuItem, 'id'>) => void;
   onUpdateMenuItem: (item: MenuItem) => void;
   onDeleteMenuItem: (id: string) => void;
-  onCreateBill: (tableNumber: number, waiterId: string) => Promise<Bill | void>;
+  onCreateBill: (tableNumber: number) => Promise<Bill | void>;
   onPayBill: (billId: string) => void;
   currentUser: DecodedToken;
 }
@@ -92,32 +92,24 @@ export default function ManagerView({
   }, [orders]);
   
   const { tablesToBill, unpaidBills } = useMemo(() => {
-    const waiterUnpaidBills = bills.filter(b => b.status === 'unpaid');
+    const managerUnpaidBills = bills.filter(b => b.status === 'unpaid');
     
     const tableNumbersWithServedOrders = new Set(
         orders.filter(o => o.status === 'served').map(o => o.tableNumber)
     );
     
-    const tablesWithUnpaidBills = new Set(waiterUnpaidBills.map(b => b.tableNumber));
+    const tablesWithUnpaidBills = new Set(managerUnpaidBills.map(b => b.tableNumber));
     
     const readyForBill = Array.from(tableNumbersWithServedOrders).filter(tn => !tablesWithUnpaidBills.has(tn));
 
-    return { tablesToBill: readyForBill, unpaidBills: waiterUnpaidBills };
+    return { tablesToBill: readyForBill, unpaidBills: managerUnpaidBills };
   }, [orders, bills]);
 
 
   const handleGenerateBill = async (tableNumber: number) => {
-    // In manager view, we might not have a single waiter for a table if orders are from multiple waiters.
-    // Let's find the waiter from the most recent served order for that table.
-    const lastServedOrder = orders
-        .filter(o => o.tableNumber === tableNumber && o.status === 'served')
-        .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
-    
-    if (lastServedOrder) {
-        const newBill = await onCreateBill(tableNumber, lastServedOrder.waiterId);
-        if(newBill) {
-            setActiveBill(newBill);
-        }
+    const newBill = await onCreateBill(tableNumber);
+    if(newBill) {
+        setActiveBill(newBill);
     }
   }
 
@@ -478,3 +470,5 @@ export default function ManagerView({
     </>
   );
 }
+
+    

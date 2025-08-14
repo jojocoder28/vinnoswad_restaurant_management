@@ -12,9 +12,7 @@ import {
   getMenuItems,
   getWaiters,
   getTables,
-  getBills,
-  createBillForTable,
-  markBillAsPaid
+  getBills
 } from '../actions';
 
 import WaiterView from '@/components/waiter-view';
@@ -147,45 +145,6 @@ export default function WaiterPage() {
       });
     }
   };
-  
-  const handleCreateBill = async (tableNumber: number, waiterId: string): Promise<Bill | void> => {
-    try {
-        const newBill = await createBillForTable(tableNumber, waiterId);
-        setBills(prev => [newBill, ...prev]);
-        const updatedOrders = await getOrders();
-        setOrders(updatedOrders);
-        toast({
-            title: "Bill Generated",
-            description: `Bill for table ${tableNumber} has been created.`
-        });
-        return newBill;
-    } catch (error) {
-         toast({
-            title: "Error Generating Bill",
-            description: "Could not create bill. Ensure there are served orders.",
-            variant: "destructive"
-        });
-    }
-  }
-
-  const handlePayBill = async (billId: string) => {
-    try {
-        await markBillAsPaid(billId);
-        const [updatedBills, updatedTables] = await Promise.all([getBills(), getTables()]);
-        setBills(updatedBills);
-        setTables(updatedTables);
-        toast({
-            title: "Payment Recorded",
-            description: "Bill has been marked as paid and table is now available.",
-        });
-    } catch (error) {
-         toast({
-            title: "Error",
-            description: "Failed to mark bill as paid.",
-            variant: "destructive"
-        });
-    }
-  }
 
 
   if (loading || !user) {
@@ -211,10 +170,10 @@ export default function WaiterPage() {
             onCreateOrder={handleCreateOrder}
             onUpdateOrder={handleUpdateOrder}
             onDeleteOrder={handleDeleteOrder}
-            onCreateBill={handleCreateBill}
-            onPayBill={handlePayBill}
             currentUser={user}
             />
     </DashboardLayout>
   );
 }
+
+    

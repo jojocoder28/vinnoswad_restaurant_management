@@ -164,9 +164,9 @@ export default function ManagerPage() {
     }
   };
 
-  const handleCreateBill = async (tableNumber: number, waiterId: string): Promise<Bill | void> => {
+  const handleCreateBill = async (tableNumber: number): Promise<Bill | void> => {
     try {
-        const newBill = await createBillForTable(tableNumber, waiterId);
+        const newBill = await createBillForTable(tableNumber);
         setBills(prev => [newBill, ...prev]);
         const updatedOrders = await getOrders();
         setOrders(updatedOrders);
@@ -234,3 +234,5 @@ export default function ManagerPage() {
     </DashboardLayout>
   );
 }
+
+    

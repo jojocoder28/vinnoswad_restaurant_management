@@ -161,7 +161,7 @@ export async function updateTableStatus(tableId: string, status: 'available' | '
 }
 
 // A helper function to check if a table should be marked as available
-async function freeUpTableIfNeeded(tableNumber: number, waiterId: string) {
+async function freeUpTableIfNeeded(tableNumber: number) {
     const ordersCollection = await getCollection<Order>('orders');
     const tablesCollection = await getCollection<Table>('tables');
     
@@ -170,7 +170,6 @@ async function freeUpTableIfNeeded(tableNumber: number, waiterId: string) {
         // Check if there are any other active orders for this table by the same waiter
         const otherOrdersCount = await ordersCollection.countDocuments({
             tableNumber: table.tableNumber,
-            waiterId: waiterId,
             status: { $nin: ['served', 'cancelled', 'billed'] },
         });
 
@@ -260,7 +259,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus): P
     
     const order = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
     if (order && status === 'served') {
-       await freeUpTableIfNeeded(order.tableNumber, order.waiterId);
+       await freeUpTableIfNeeded(order.tableNumber);
     }
 
     revalidatePath('/waiter');
@@ -273,7 +272,7 @@ export async function deleteOrder(orderId: string): Promise<void> {
     const order = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
     if (order) {
         await ordersCollection.deleteOne({ _id: new ObjectId(orderId) });
-        await freeUpTableIfNeeded(order.tableNumber, order.waiterId);
+        await freeUpTableIfNeeded(order.tableNumber);
     }
     revalidatePath('/waiter');
     revalidatePath('/manager');
@@ -290,7 +289,7 @@ export async function cancelOrder(orderId: string, reason: string): Promise<void
     
     const order = await ordersCollection.findOne({ _id: new ObjectId(orderId) });
     if (order) {
-       await freeUpTableIfNeeded(order.tableNumber, order.waiterId);
+       await freeUpTableIfNeeded(order.tableNumber);
     }
 
     revalidatePath('/waiter');
@@ -364,13 +363,12 @@ export async function getBills(): Promise<Bill[]> {
     return bills.map(bill => mapId<Bill>(bill));
 }
 
-export async function createBillForTable(tableNumber: number, waiterId: string): Promise<Bill> {
+export async function createBillForTable(tableNumber: number): Promise<Bill> {
     const ordersCollection = await getCollection<Order>('orders');
     const billsCollection = await getCollection<Bill>('bills');
     
     const ordersToBill = await ordersCollection.find({
         tableNumber,
-        waiterId,
         status: 'served'
     }).toArray();
 
@@ -389,7 +387,6 @@ export async function createBillForTable(tableNumber: number, waiterId: string):
     const newBill: Omit<Bill, 'id'> = {
         tableNumber,
         orderIds: ordersToBill.map(o => o._id.toHexString()),
-        waiterId,
         subtotal,
         tax,
         total,
@@ -407,6 +404,7 @@ export async function createBillForTable(tableNumber: number, waiterId: string):
     );
 
     revalidatePath('/waiter');
+    revalidatePath('/manager');
     return mapId<Bill>({ ...newBill, _id: newBillId });
 }
 
@@ -428,6 +426,7 @@ export async function markBillAsPaid(billId: string): Promise<void> {
     }
     
     revalidatePath('/waiter');
+    revalidatePath('/manager');
     revalidatePath('/admin');
 }
 
@@ -682,3 +681,5 @@ export async function verifyRazorpayPayment(data: {
     // Mark the bill as paid in the database
     await markBillAsPaid(billId);
 }
+
+    

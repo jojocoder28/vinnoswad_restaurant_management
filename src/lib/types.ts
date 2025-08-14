@@ -42,7 +42,7 @@ export interface Bill {
     id: string;
     tableNumber: number;
     orderIds: string[];
-    waiterId: string;
+    waiterId?: string; // Optional as manager handles billing
     subtotal: number;
     tax: number;
     total: number;
@@ -162,3 +162,5 @@ export interface RazorpayOrder {
     notes: any[];
     created_at: number;
 }
+
+    
