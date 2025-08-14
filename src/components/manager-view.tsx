@@ -93,16 +93,31 @@ export default function ManagerView({
   
   const { tablesToBill, unpaidBills } = useMemo(() => {
     const managerUnpaidBills = bills.filter(b => b.status === 'unpaid');
-    
-    const tableNumbersWithServedOrders = new Set(
-        orders.filter(o => o.status === 'served').map(o => o.tableNumber)
-    );
-    
     const tablesWithUnpaidBills = new Set(managerUnpaidBills.map(b => b.tableNumber));
-    
-    const readyForBill = Array.from(tableNumbersWithServedOrders).filter(tn => !tablesWithUnpaidBills.has(tn));
-
-    return { tablesToBill: readyForBill, unpaidBills: managerUnpaidBills };
+  
+    // Group orders by table number
+    const ordersByTable = orders.reduce((acc, order) => {
+        if (!['billed', 'cancelled'].includes(order.status)) { // Only consider active orders
+            if (!acc[order.tableNumber]) {
+                acc[order.tableNumber] = [];
+            }
+            acc[order.tableNumber].push(order);
+        }
+        return acc;
+    }, {} as Record<number, Order[]>);
+  
+    const readyForBill: number[] = [];
+    for (const tableNum in ordersByTable) {
+        const tableOrders = ordersByTable[tableNum];
+        // A table is ready to be billed if it has active orders and ALL of them are 'served'
+        const allServed = tableOrders.length > 0 && tableOrders.every(o => o.status === 'served');
+        
+        if (allServed && !tablesWithUnpaidBills.has(Number(tableNum))) {
+            readyForBill.push(Number(tableNum));
+        }
+    }
+  
+    return { tablesToBill: readyForBill.sort((a,b) => a-b), unpaidBills: managerUnpaidBills };
   }, [orders, bills]);
 
 
@@ -470,5 +485,3 @@ export default function ManagerView({
     </>
   );
 }
-
-    
