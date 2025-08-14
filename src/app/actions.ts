@@ -60,7 +60,6 @@ export async function registerUser(userData: Omit<User, 'id' | 'status'>, isAdmi
         revalidatePath('/admin');
     }
 
-    // The isFirstUser concept is removed, so we return a consistent response.
     return { success: true, pending: status === 'pending' };
 }
 
@@ -384,9 +383,8 @@ export async function createBillForTable(tableNumber: number, waiterId: string):
         return sum + orderTotal;
     }, 0);
 
-    const TAX_RATE = 0.10; // 10% tax
-    const tax = subtotal * TAX_RATE;
-    const total = subtotal + tax;
+    const tax = 0; // Tax is now included in the price
+    const total = subtotal; // Total is just the subtotal
 
     const newBill: Omit<Bill, 'id'> = {
         tableNumber,

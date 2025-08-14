@@ -255,10 +255,6 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                                 <span>Subtotal</span>
                                 <span className="font-mono">₹{bill.subtotal.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between">
-                                <span>Tax (10%)</span>
-                                <span className="font-mono">₹{bill.tax.toFixed(2)}</span>
-                            </div>
                             <div className="flex justify-between font-bold" style={{fontSize: '1rem', marginTop: '0.25rem', paddingTop: '0.25rem', borderTop: '1px dashed black'}}>
                                 <span>Grand Total</span>
                                 <span className="font-mono">₹{bill.total.toFixed(2)}</span>
@@ -275,6 +271,7 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                             </div>
                         )}
                         <p className="text-center text-xs mt-4">Thank you for dining with us!</p>
+                        <p className="text-center text-xs mt-2">Amounts are inclusive of all taxes.</p>
                     </div>
                 </div>
 
@@ -310,10 +307,6 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
                                 <div className="flex justify-between">
                                     <span>Subtotal</span>
                                     <span className="font-mono">₹{bill.subtotal.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Tax (10%)</span>
-                                    <span className="font-mono">₹{bill.tax.toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between font-bold text-base mt-1">
                                     <span>Total</span>
@@ -368,7 +361,3 @@ export default function BillingModal({ isOpen, onClose, bill, onPayBill, orders,
         </Dialog>
     );
 }
-
-    
-
-    
