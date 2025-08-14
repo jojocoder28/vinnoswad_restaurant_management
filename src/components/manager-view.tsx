@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { Order, MenuItem, OrderStatus, Waiter, Bill, DecodedToken, Table } from '@/lib/types';
+import type { Order, MenuItem, OrderStatus, Waiter, Bill, DecodedToken, Table, OrderItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, ChefHat, Utensils, Package, Clock, ShieldAlert, XCircle, FileText, Printer } from 'lucide-react';
 import OrderCard from './order-card';
@@ -32,7 +32,7 @@ interface ManagerViewProps {
   currentUser: DecodedToken;
 }
 
-const StatCard = ({ title, value, icon: Icon }: { title: string, value: number, icon: React.ElementType }) => (
+const StatCard = ({ title, value, icon: Icon }: { title: string, value: number | string, icon: React.ElementType }) => (
     <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{title}</CardTitle>
@@ -67,7 +67,6 @@ export default function ManagerView({
   const pendingOrders = useMemo(() => orders.filter(o => o.status === 'pending'), [orders]);
   const approvedOrders = useMemo(() => orders.filter(o => o.status === 'approved'), [orders]);
   const preparedOrders = useMemo(() => orders.filter(o => o.status === 'prepared'), [orders]);
-  const servedOrders = useMemo(() => orders.filter(o => o.status === 'served' || o.status === 'billed'), [orders]);
   const cancelledOrders = useMemo(() => orders.filter(o => o.status === 'cancelled'), [orders]);
 
   const getWaiterName = (waiterId: string) => waiters.find(w => w.id === waiterId)?.name || "Unknown";
@@ -95,9 +94,8 @@ export default function ManagerView({
     const managerUnpaidBills = bills.filter(b => b.status === 'unpaid');
     const tablesWithUnpaidBills = new Set(managerUnpaidBills.map(b => b.tableNumber));
   
-    // Group orders by table number
     const ordersByTable = orders.reduce((acc, order) => {
-        if (!['billed', 'cancelled'].includes(order.status)) { // Only consider active orders
+        if (!['billed', 'cancelled'].includes(order.status)) { 
             if (!acc[order.tableNumber]) {
                 acc[order.tableNumber] = [];
             }
@@ -109,7 +107,6 @@ export default function ManagerView({
     const readyForBill: number[] = [];
     for (const tableNum in ordersByTable) {
         const tableOrders = ordersByTable[tableNum];
-        // A table is ready to be billed if it has active orders and ALL of them are 'served'
         const allServed = tableOrders.length > 0 && tableOrders.every(o => o.status === 'served');
         
         if (allServed && !tablesWithUnpaidBills.has(Number(tableNum))) {
@@ -119,6 +116,23 @@ export default function ManagerView({
   
     return { tablesToBill: readyForBill.sort((a,b) => a-b), unpaidBills: managerUnpaidBills };
   }, [orders, bills]);
+
+  const paidBillsWithDetails = useMemo(() => {
+    const paid = bills.filter(b => b.status === 'paid');
+    return paid.map(bill => {
+        const billOrders = orders.filter(o => bill.orderIds.includes(o.id));
+        const allItems: OrderItem[] = billOrders.flatMap(o => o.items);
+        
+        // Find the earliest order in the bill to determine the primary waiter
+        const firstOrder = billOrders.sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())[0];
+        
+        return {
+            bill,
+            items: allItems,
+            waiterId: firstOrder?.waiterId || '',
+        };
+    });
+  }, [bills, orders]);
 
 
   const handleGenerateBill = async (tableNumber: number) => {
@@ -389,23 +403,35 @@ export default function ManagerView({
         label: "Served History",
         content: (
             <div>
-                <h3 className="text-xl font-headline font-semibold mb-4">Served & Billed Orders</h3>
+                <h3 className="text-xl font-headline font-semibold mb-4">Paid Bills History</h3>
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {servedOrders.length > 0 ? (
-                    servedOrders.map(order => (
+                    {paidBillsWithDetails.length > 0 ? (
+                     paidBillsWithDetails.map(({ bill, items, waiterId }) => (
                         <OrderCard
-                        key={order.id}
-                        order={order}
-                        menuItems={menuItems}
-                        waiterName={getWaiterName(order.waiterId)}
-                        actions={renderOrderActions(order)}
+                            key={bill.id}
+                            order={{ // We adapt the bill to look like an order for the card
+                                id: bill.id,
+                                tableNumber: bill.tableNumber,
+                                items: items,
+                                status: 'billed', // It's a paid bill, so status is 'billed'
+                                timestamp: bill.timestamp,
+                                waiterId: waiterId,
+                            }}
+                            orderTotal={bill.total} // Pass the final bill total
+                            menuItems={menuItems}
+                            waiterName={getWaiterName(waiterId)}
+                            actions={
+                                <Button variant="outline" className="w-full" onClick={() => handleViewBill(bill)}>
+                                    <Printer className="mr-2 h-4 w-4" /> Print Receipt
+                                </Button>
+                            }
                         />
                     ))
                     ) : (
                         <Card className="col-span-full border-dashed">
                             <CardHeader className="text-center">
-                                <CardTitle>No Served Orders</CardTitle>
-                                <CardDescription>There are no completed orders to display.</CardDescription>
+                                <CardTitle>No Paid Bills</CardTitle>
+                                <CardDescription>There are no completed transactions to display yet.</CardDescription>
                             </CardHeader>
                         </Card>
                     )}

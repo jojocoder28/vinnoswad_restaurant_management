@@ -12,6 +12,7 @@ interface OrderCardProps {
   menuItems: MenuItem[];
   waiterName: string;
   actions?: ReactNode;
+  orderTotal?: number; // Optional prop for overriding the calculated total
 }
 
 const statusStyles: Record<OrderStatus, string> = {
@@ -23,10 +24,17 @@ const statusStyles: Record<OrderStatus, string> = {
   cancelled: 'bg-red-500/20 text-red-700 border-red-500/30 hover:bg-red-500/30',
 };
 
-export default function OrderCard({ order, menuItems, waiterName, actions }: OrderCardProps) {
-  const orderTotal = order.items.reduce((total, item) => {
-    return total + (item.price * item.quantity);
-  }, 0);
+export default function OrderCard({ order, menuItems, waiterName, actions, orderTotal }: OrderCardProps) {
+  const calculatedTotal = useMemo(() => {
+    return order.items.reduce((total, item) => {
+        const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
+        // Use the price from the order item if available, otherwise fetch from menu
+        const price = item.price || menuItem?.price || 0;
+        return total + (price * item.quantity);
+    }, 0);
+  }, [order.items, menuItems]);
+
+  const displayTotal = orderTotal !== undefined ? orderTotal : calculatedTotal;
 
   return (
     <Card className="flex flex-col">
@@ -51,12 +59,13 @@ export default function OrderCard({ order, menuItems, waiterName, actions }: Ord
         )}
         <ScrollArea className="h-32 pr-4">
             <ul className="text-sm space-y-1 py-2">
-            {order.items.map(item => {
+            {order.items.map((item, index) => {
                 const menuItem = menuItems.find(mi => mi.id === item.menuItemId);
+                const price = item.price || menuItem?.price || 0;
                 return (
-                <li key={item.menuItemId} className="flex justify-between">
+                <li key={`${item.menuItemId}-${index}`} className="flex justify-between">
                     <span>{item.quantity}x {menuItem?.name || 'Unknown Item'}</span>
-                    <span className="font-mono">₹{(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="font-mono">₹{(price * item.quantity).toFixed(2)}</span>
                 </li>
                 );
             })}
@@ -65,7 +74,7 @@ export default function OrderCard({ order, menuItems, waiterName, actions }: Ord
         <Separator />
          <div className="flex justify-between font-bold pt-2">
             <span>Total</span>
-            <span className="font-mono">₹{orderTotal.toFixed(2)}</span>
+            <span className="font-mono">₹{displayTotal.toFixed(2)}</span>
         </div>
       </CardContent>
       {actions && (
